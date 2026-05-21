@@ -17,7 +17,7 @@ const Dashboard = () => {
 
   const handleLogout = () => {
     logout()
-    window.location.assign('/login')
+    navigate('/login')
   }
 
   useEffect(() => { fetchDashboard() }, [])

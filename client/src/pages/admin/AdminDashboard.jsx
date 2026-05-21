@@ -12,7 +12,7 @@ export const AdminLayout = () => {
 
   const handleLogout = () => {
     logout()
-    window.location.assign('/login')
+    navigate('/login')
   }
 
   const navItems = [
