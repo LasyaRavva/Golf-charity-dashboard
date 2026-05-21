@@ -1,5 +1,15 @@
 # Golf Charity Platform
 
+# Deployment Link: https://golf-charity-dashboard.vercel.app/
+
+# Admin Credentials
+# Mail: golfadmin@test.com
+# Password: Admin1234
+
+# User Credentials
+# Mail: sarah@test.com
+# Password: Test1234
+
 Monorepo scaffold for a React + Vite frontend and a Node.js + Express backend.
 
 ## Apps
