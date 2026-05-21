@@ -11,11 +11,25 @@ const app = express()
 const PORT = process.env.PORT || 5000
 const allowedOrigins = [
   process.env.CLIENT_URL,
+  process.env.CLIENT_URLS,
   'http://localhost:5173'
-].filter(Boolean)
+]
+  .filter(Boolean)
+  .flatMap(value => value.split(','))
+  .map(value => value.trim().replace(/\/+$/, ''))
+  .filter(Boolean)
 
 app.use(cors({
-  origin: allowedOrigins,
+  origin(origin, callback) {
+    if (!origin) return callback(null, true)
+
+    const normalizedOrigin = origin.replace(/\/+$/, '')
+    if (allowedOrigins.includes(normalizedOrigin)) {
+      return callback(null, true)
+    }
+
+    return callback(new Error(`Origin not allowed by CORS: ${origin}`))
+  },
   credentials: true
 }))
 
