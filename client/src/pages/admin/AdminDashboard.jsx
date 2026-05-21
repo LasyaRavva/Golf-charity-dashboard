@@ -117,7 +117,7 @@ export const AdminLayout = () => {
         )}
 
         {/* Nav */}
-        <nav style={{
+        <nav className="sidebar-scroll" style={{
           flex: '1 1 auto',
           minHeight: 0,
           overflowY: 'auto',
