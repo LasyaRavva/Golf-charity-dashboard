@@ -19,12 +19,22 @@ const allowedOrigins = [
   .map(value => value.trim().replace(/\/+$/, ''))
   .filter(Boolean)
 
+const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+const wildcardToRegex = (value) => new RegExp(`^${value.split('*').map(escapeRegex).join('.*')}$`)
+const allowedOriginPatterns = allowedOrigins
+  .filter(origin => origin.includes('*'))
+  .map(wildcardToRegex)
+const allowedOriginLiterals = allowedOrigins.filter(origin => !origin.includes('*'))
+
 app.use(cors({
   origin(origin, callback) {
     if (!origin) return callback(null, true)
 
     const normalizedOrigin = origin.replace(/\/+$/, '')
-    if (allowedOrigins.includes(normalizedOrigin)) {
+    const literalMatch = allowedOriginLiterals.includes(normalizedOrigin)
+    const patternMatch = allowedOriginPatterns.some(pattern => pattern.test(normalizedOrigin))
+
+    if (literalMatch || patternMatch) {
       return callback(null, true)
     }
 
