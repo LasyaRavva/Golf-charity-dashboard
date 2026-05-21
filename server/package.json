@@ -1,0 +1,21 @@
+{
+  "name": "golf-charity-server",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "dev": "node --watch index.js",
+    "start": "node index.js",
+    "make-admin": "node scripts/makeAdmin.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.8",
+    "bcryptjs": "^3.0.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "node-cron": "^4.2.1",
+    "nodemailer": "^7.0.3",
+    "stripe": "^18.4.0"
+  }
+}
