@@ -1,7 +1,11 @@
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
 const supabase = require('../config/supabase')
-const { sendWelcomeEmail, sendPasswordResetEmail } = require('../utils/emailService')
+const {
+  sendWelcomeEmail,
+  sendPasswordResetEmail,
+  sendPasswordResetOtpEmail
+} = require('../utils/emailService')
 
 // SIGNUP
 const signup = async (req, res) => {
@@ -128,23 +132,24 @@ const forgotPassword = async (req, res) => {
       .single()
 
     if (user) {
+      const code = String(Math.floor(100000 + Math.random() * 900000))
       const secret = `${process.env.JWT_SECRET}${user.password}`
       const token = jwt.sign(
-        { id: user.id, email: user.email, type: 'password-reset' },
+        { id: user.id, email: user.email, code, type: 'password-reset-otp' },
         secret,
-        { expiresIn: '1h' }
+        { expiresIn: '15m' }
       )
 
-      const resetUrl = new URL('/reset-password', process.env.CLIENT_URL)
-      resetUrl.searchParams.set('token', token)
-      resetUrl.searchParams.set('id', String(user.id))
+      await sendPasswordResetOtpEmail(user, code)
 
-      const resetLink = resetUrl.toString()
-      await sendPasswordResetEmail(user, resetLink)
+      return res.json({
+        message: 'We sent a 6-digit reset code to your email.',
+        resetSession: token
+      })
     }
 
     res.json({
-      message: 'If an account exists for that email, a password reset link has been sent.'
+      message: 'If an account exists for that email, a reset code has been sent.'
     })
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message })
@@ -196,6 +201,57 @@ const resetPassword = async (req, res) => {
   }
 }
 
+const resetPasswordWithCode = async (req, res) => {
+  const { email, code, resetSession, password } = req.body
+
+  if (!email || !code || !resetSession || !password)
+    return res.status(400).json({ message: 'All fields required' })
+
+  if (password.length < 6)
+    return res.status(400).json({ message: 'Password must be at least 6 characters' })
+
+  try {
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('id, email, password')
+      .eq('email', email)
+      .single()
+
+    if (error || !user)
+      return res.status(400).json({ message: 'Invalid or expired reset code' })
+
+    const secret = `${process.env.JWT_SECRET}${user.password}`
+    let payload
+
+    try {
+      payload = jwt.verify(resetSession, secret)
+    } catch {
+      return res.status(400).json({ message: 'Invalid or expired reset code' })
+    }
+
+    if (
+      payload.type !== 'password-reset-otp' ||
+      String(payload.id) !== String(user.id) ||
+      String(payload.email).toLowerCase() !== String(email).toLowerCase() ||
+      String(payload.code) !== String(code).trim()
+    ) {
+      return res.status(400).json({ message: 'Invalid or expired reset code' })
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10)
+    const { error: updateError } = await supabase
+      .from('users')
+      .update({ password: hashedPassword })
+      .eq('id', user.id)
+
+    if (updateError) throw updateError
+
+    res.json({ message: 'Password reset successful. You can now sign in.' })
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message })
+  }
+}
+
 // GET CURRENT USER
 const getMe = async (req, res) => {
   try {
@@ -214,4 +270,11 @@ const getMe = async (req, res) => {
   }
 }
 
-module.exports = { signup, login, forgotPassword, resetPassword, getMe }
+module.exports = {
+  signup,
+  login,
+  forgotPassword,
+  resetPassword,
+  resetPasswordWithCode,
+  getMe
+}

@@ -47,7 +47,7 @@ const baseTemplate = (content) => `
 `
 
 // ─── SEND EMAIL HELPER ───
-const sendEmail = async ({ to, subject, html }) => {
+const sendEmail = async ({ to, subject, html, strict = false }) => {
   try {
     await transporter.sendMail({
       from: process.env.EMAIL_FROM,
@@ -56,8 +56,11 @@ const sendEmail = async ({ to, subject, html }) => {
       html
     })
     console.log(`Email sent to ${to}: ${subject}`)
+    return true
   } catch (err) {
     console.error(`Email failed to ${to}:`, err.message)
+    if (strict) throw err
+    return false
   }
 }
 
@@ -101,6 +104,25 @@ const sendPasswordResetEmail = async (user, resetLink) => {
     to: user.email,
     subject: 'Reset your Golf Charity Platform password',
     html
+  })
+}
+
+const sendPasswordResetOtpEmail = async (user, code) => {
+  const html = baseTemplate(`
+    <h2>Your password reset code</h2>
+    <p>Hi ${user.name || 'there'}, use the one-time code below to reset your password.</p>
+    <div class="highlight">
+      <strong style="font-size: 1.8rem; letter-spacing: 6px;">${code}</strong><br/>
+      This code expires in <strong>15 minutes</strong>.
+    </div>
+    <p>If you did not request this, you can ignore this email.</p>
+  `)
+
+  await sendEmail({
+    to: user.email,
+    subject: 'Your Golf Charity Platform reset code',
+    html,
+    strict: true
   })
 }
 
@@ -265,6 +287,7 @@ const sendCancellationEmail = async (user) => {
 module.exports = {
   sendWelcomeEmail,
   sendPasswordResetEmail,
+  sendPasswordResetOtpEmail,
   sendSubscriptionEmail,
   sendDrawResultsEmail,
   sendVerificationApprovedEmail,
