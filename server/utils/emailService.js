@@ -1,12 +1,62 @@
 const nodemailer = require('nodemailer')
 
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
+const hasEmailCredentials = () => Boolean(
+  process.env.EMAIL_USER &&
+  process.env.EMAIL_PASS &&
+  process.env.EMAIL_FROM
+)
+
+const buildTransportConfig = () => {
+  if (process.env.SMTP_HOST) {
+    return {
+      host: process.env.SMTP_HOST,
+      port: Number(process.env.SMTP_PORT || 587),
+      secure: String(process.env.SMTP_SECURE || '').toLowerCase() === 'true',
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+      }
+    }
   }
-})
+
+  return {
+    service: process.env.EMAIL_SERVICE || 'gmail',
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS
+    }
+  }
+}
+
+let transporter = null
+
+const getTransporter = () => {
+  if (!hasEmailCredentials()) {
+    throw new Error('Email transport is not configured. Set EMAIL_USER, EMAIL_PASS, and EMAIL_FROM.')
+  }
+
+  if (!transporter) {
+    transporter = nodemailer.createTransport(buildTransportConfig())
+  }
+
+  return transporter
+}
+
+const verifyEmailTransport = async () => {
+  if (!hasEmailCredentials()) {
+    console.warn('Email disabled: EMAIL_USER, EMAIL_PASS, or EMAIL_FROM is missing.')
+    return false
+  }
+
+  try {
+    await getTransporter().verify()
+    console.log('Email transport verified successfully.')
+    return true
+  } catch (err) {
+    console.error('Email transport verification failed:', err.message)
+    return false
+  }
+}
 
 // ─── BASE TEMPLATE ───
 const baseTemplate = (content) => `
@@ -49,7 +99,7 @@ const baseTemplate = (content) => `
 // ─── SEND EMAIL HELPER ───
 const sendEmail = async ({ to, subject, html, strict = false }) => {
   try {
-    await transporter.sendMail({
+    await getTransporter().sendMail({
       from: process.env.EMAIL_FROM,
       to,
       subject,
@@ -285,6 +335,7 @@ const sendCancellationEmail = async (user) => {
 }
 
 module.exports = {
+  verifyEmailTransport,
   sendWelcomeEmail,
   sendPasswordResetEmail,
   sendPasswordResetOtpEmail,

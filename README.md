@@ -69,6 +69,13 @@ Required backend variables:
 - `EMAIL_PASS`
 - `EMAIL_FROM`
 
+Optional backend email variables for production SMTP:
+
+- `EMAIL_SERVICE` default: `gmail`
+- `SMTP_HOST`
+- `SMTP_PORT`
+- `SMTP_SECURE`
+
 Required frontend variables:
 
 - `VITE_API_URL`
@@ -118,6 +125,12 @@ npm start
 ```
 
 Set all backend environment variables in your hosting dashboard.
+
+For reset-code emails in production:
+
+- If you use Gmail, `EMAIL_PASS` must be a Google App Password, not your normal Gmail password.
+- Many hosts work more reliably with a dedicated SMTP provider. In that case set `SMTP_HOST`, `SMTP_PORT`, and `SMTP_SECURE`.
+- On startup the server now logs whether email transport verification passed. Check backend logs right after deployment if forgot-password emails are not arriving.
 
 After deploy, confirm:
 

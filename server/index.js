@@ -5,6 +5,7 @@ const dotenv = require('dotenv')
 dotenv.config()
 
 const startRenewalCron = require('./utils/renewalCron')
+const { verifyEmailTransport } = require('./utils/emailService')
 const { handleWebhook } = require('./controllers/subscriptionController')
 
 const app = express()
@@ -71,4 +72,5 @@ app.get('/', (_req, res) => {
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
+  verifyEmailTransport()
 })
