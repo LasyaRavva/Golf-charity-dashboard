@@ -60,6 +60,7 @@ Required backend variables:
 - `SUPABASE_URL`
 - `SUPABASE_SERVICE_KEY`
 - `JWT_SECRET`
+- `CLERK_SECRET_KEY`
 - `CLIENT_URL`
 - `STRIPE_SECRET_KEY`
 - `STRIPE_WEBHOOK_SECRET`
@@ -68,6 +69,7 @@ Required backend variables:
 - `EMAIL_USER`
 - `EMAIL_PASS`
 - `EMAIL_FROM`
+- `RESEND_API_KEY` for Render free or any non-SMTP deployment
 
 Optional backend email variables for production SMTP:
 
@@ -79,6 +81,7 @@ Optional backend email variables for production SMTP:
 Required frontend variables:
 
 - `VITE_API_URL`
+- `VITE_CLERK_PUBLISHABLE_KEY`
 
 ### 2. Deploy Supabase
 
@@ -128,9 +131,10 @@ Set all backend environment variables in your hosting dashboard.
 
 For reset-code emails in production:
 
-- If you use Gmail, `EMAIL_PASS` must be a Google App Password, not your normal Gmail password.
-- Many hosts work more reliably with a dedicated SMTP provider. In that case set `SMTP_HOST`, `SMTP_PORT`, and `SMTP_SECURE`.
-- On startup the server now logs whether email transport verification passed. Check backend logs right after deployment if forgot-password emails are not arriving.
+- On Render free, use `RESEND_API_KEY`. Render blocks outbound SMTP on ports `25`, `465`, and `587` for free web services.
+- If you use Gmail SMTP elsewhere, `EMAIL_PASS` must be a Google App Password, not your normal Gmail password.
+- If using SMTP with another host, set `SMTP_HOST`, `SMTP_PORT`, and `SMTP_SECURE`.
+- On startup the server now logs which provider is configured or whether SMTP verification failed.
 
 After deploy, confirm:
 
@@ -176,6 +180,7 @@ Set:
 
 ```bash
 VITE_API_URL=https://your-backend-domain/api
+VITE_CLERK_PUBLISHABLE_KEY=pk_test_or_pk_live_from_clerk
 ```
 
 ### 6. Final production updates

@@ -1,45 +1,93 @@
-import { createContext, useContext, useState, useEffect } from 'react'
-import api from '../services/api'
+import { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import api, { setApiTokenGetter } from '../services/api'
 
-const AuthContext = createContext()
+export const AuthContext = createContext(null)
+
+const TOKEN_KEY = 'golf_auth_token'
 
 export const AuthProvider = ({ children }) => {
+  const [token, setToken] = useState(() => localStorage.getItem(TOKEN_KEY) || '')
   const [user, setUser] = useState(null)
-  const [token, setToken] = useState(localStorage.getItem('token'))
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (token) {
-      api.get('/auth/me')
-        .then(res => setUser(res.data.user))
-        .catch(() => logout())
-        .finally(() => setLoading(false))
-    } else {
-      setLoading(false)
-    }
+    setApiTokenGetter(async () => token || null)
   }, [token])
 
-  const login = (token, user) => {
-    localStorage.setItem('token', token)
-    setToken(token)
-    setUser(user)
-  }
-
-  const logout = () => {
-    localStorage.removeItem('token')
-    setToken(null)
-    setUser(null)
+  const persistToken = (nextToken) => {
+    if (nextToken) localStorage.setItem(TOKEN_KEY, nextToken)
+    else localStorage.removeItem(TOKEN_KEY)
+    setToken(nextToken || '')
   }
 
   const refreshUser = async () => {
-    if (!token) return null
     const res = await api.get('/auth/me')
     setUser(res.data.user)
     return res.data.user
   }
 
+  const setSession = async (nextToken, nextUser = null) => {
+    persistToken(nextToken)
+
+    if (nextUser) {
+      setUser(nextUser)
+      return nextUser
+    }
+
+    return refreshUser()
+  }
+
+  const logout = () => {
+    persistToken('')
+    setUser(null)
+  }
+
+  useEffect(() => {
+    let cancelled = false
+
+    const loadUser = async () => {
+      if (!token) {
+        if (!cancelled) {
+          setUser(null)
+          setLoading(false)
+        }
+        return
+      }
+
+      try {
+        const nextUser = await api.get('/auth/me')
+        if (!cancelled) setUser(nextUser.data.user)
+      } catch {
+        if (!cancelled) {
+          persistToken('')
+          setUser(null)
+        }
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+
+    setLoading(true)
+    loadUser()
+
+    return () => {
+      cancelled = true
+    }
+  }, [token])
+
+  const value = useMemo(() => ({
+    user,
+    token,
+    loading,
+    isAuthenticated: Boolean(user),
+    isAdmin: user?.role === 'admin',
+    refreshUser,
+    setSession,
+    logout
+  }), [loading, token, user])
+
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, loading, refreshUser }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   )

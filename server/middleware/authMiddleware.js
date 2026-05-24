@@ -1,19 +1,35 @@
 const jwt = require('jsonwebtoken')
+const supabase = require('../config/supabase')
 
-const authMiddleware = (req, res, next) => {
-  const authHeader = req.headers.authorization
+const getBearerToken = (req) => {
+  const authHeader = req.headers.authorization || ''
 
-  if (!authHeader || !authHeader.startsWith('Bearer '))
-    return res.status(401).json({ message: 'No token provided' })
+  if (!authHeader.startsWith('Bearer ')) {
+    throw new Error('No token provided')
+  }
 
-  const token = authHeader.split(' ')[1]
+  return authHeader.slice(7)
+}
 
+const authMiddleware = async (req, res, next) => {
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET)
-    req.user = decoded
+    const token = getBearerToken(req)
+    const payload = jwt.verify(token, process.env.JWT_SECRET)
+
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('id, name, email, role, charity_id, charity_percentage, created_at')
+      .eq('id', payload.id)
+      .single()
+
+    if (error || !user)
+      return res.status(401).json({ message: 'User not found' })
+
+    req.auth = payload
+    req.user = user
     next()
-  } catch (err) {
-    return res.status(401).json({ message: 'Invalid or expired token' })
+  } catch (error) {
+    return res.status(401).json({ message: error.message || 'Invalid or expired token' })
   }
 }
 

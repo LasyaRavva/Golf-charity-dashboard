@@ -26,9 +26,16 @@ const api = axios.create({
   baseURL: normalizeApiBaseUrl(import.meta.env.VITE_API_URL)
 })
 
-api.interceptors.request.use(config => {
-  const token = localStorage.getItem('token')
+let apiTokenGetter = async () => null
+
+export const setApiTokenGetter = (getter) => {
+  apiTokenGetter = getter || (async () => null)
+}
+
+api.interceptors.request.use(async config => {
+  const token = await apiTokenGetter()
   if (token) config.headers.Authorization = `Bearer ${token}`
+  else if (config.headers?.Authorization) delete config.headers.Authorization
   return config
 })
 

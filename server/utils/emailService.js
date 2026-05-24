@@ -1,10 +1,23 @@
 const nodemailer = require('nodemailer')
 
+const RESEND_API_URL = 'https://api.resend.com/emails'
+
+const hasResendConfig = () => Boolean(
+  process.env.RESEND_API_KEY &&
+  process.env.EMAIL_FROM
+)
+
 const hasEmailCredentials = () => Boolean(
   process.env.EMAIL_USER &&
   process.env.EMAIL_PASS &&
   process.env.EMAIL_FROM
 )
+
+const getEmailProvider = () => {
+  if (hasResendConfig()) return 'resend'
+  if (hasEmailCredentials()) return 'smtp'
+  return 'none'
+}
 
 const buildTransportConfig = () => {
   if (process.env.SMTP_HOST) {
@@ -43,14 +56,21 @@ const getTransporter = () => {
 }
 
 const verifyEmailTransport = async () => {
-  if (!hasEmailCredentials()) {
-    console.warn('Email disabled: EMAIL_USER, EMAIL_PASS, or EMAIL_FROM is missing.')
+  const provider = getEmailProvider()
+
+  if (provider === 'resend') {
+    console.log('Email provider configured: Resend API.')
+    return true
+  }
+
+  if (provider === 'none') {
+    console.warn('Email disabled: configure RESEND_API_KEY or SMTP credentials.')
     return false
   }
 
   try {
     await getTransporter().verify()
-    console.log('Email transport verified successfully.')
+    console.log('Email transport verified successfully via SMTP.')
     return true
   } catch (err) {
     console.error('Email transport verification failed:', err.message)
@@ -97,16 +117,59 @@ const baseTemplate = (content) => `
 `
 
 // ─── SEND EMAIL HELPER ───
-const sendEmail = async ({ to, subject, html, strict = false }) => {
-  try {
-    await getTransporter().sendMail({
+const sendWithResend = async ({ to, subject, html }) => {
+  const response = await fetch(RESEND_API_URL, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
       from: process.env.EMAIL_FROM,
-      to,
+      to: [to],
       subject,
       html
     })
-    console.log(`Email sent to ${to}: ${subject}`)
-    return true
+  })
+
+  if (!response.ok) {
+    let details = response.statusText
+
+    try {
+      const data = await response.json()
+      details = data?.message || data?.error?.message || JSON.stringify(data)
+    } catch {}
+
+    throw new Error(`Resend API error (${response.status}): ${details}`)
+  }
+}
+
+const sendWithSmtp = async ({ to, subject, html }) => {
+  await getTransporter().sendMail({
+    from: process.env.EMAIL_FROM,
+    to,
+    subject,
+    html
+  })
+}
+
+const sendEmail = async ({ to, subject, html, strict = false }) => {
+  try {
+    const provider = getEmailProvider()
+
+    if (provider === 'resend') {
+      await sendWithResend({ to, subject, html })
+      console.log(`Email sent to ${to} via Resend: ${subject}`)
+      return true
+    }
+
+    if (provider === 'smtp') {
+      await sendWithSmtp({ to, subject, html })
+      console.log(`Email sent to ${to} via SMTP: ${subject}`)
+      return true
+    }
+
+    throw new Error('No email provider configured. Set RESEND_API_KEY or SMTP credentials.')
   } catch (err) {
     console.error(`Email failed to ${to}:`, err.message)
     if (strict) throw err
