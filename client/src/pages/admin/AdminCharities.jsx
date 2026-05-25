@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import api from '../../services/api'
+import { useResponsive } from '../../hooks/useResponsive'
 
 const AdminCharities = () => {
   const [charities, setCharities] = useState([])
@@ -13,6 +14,7 @@ const AdminCharities = () => {
   const [search, setSearch] = useState('')
   const [filterFeatured, setFilterFeatured] = useState('all')
   const [expandedEvents, setExpandedEvents] = useState({})
+  const { isMobile } = useResponsive()
 
   const emptyForm = {
     name: '', description: '', image_url: '', featured: false
@@ -403,16 +405,30 @@ const AdminCharities = () => {
 
       {/* Charities Grid */}
       {fetching ? (
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))',
-          gap: '1.2rem'
-        }}>
+        <div
+          className={isMobile ? 'hide-scrollbar' : undefined}
+          style={{
+            display: isMobile ? 'flex' : 'grid',
+            gridTemplateColumns: isMobile ? undefined : 'repeat(auto-fill, minmax(340px, 1fr))',
+            gap: '1.2rem',
+            ...(isMobile
+              ? {
+                  overflowX: 'auto',
+                  scrollSnapType: 'x mandatory',
+                  paddingBottom: '0.25rem'
+                }
+              : {})
+          }}>
           {[1, 2, 3].map(i => (
-            <div key={i} style={{
-              background: '#fff', borderRadius: '14px',
-              border: '1px solid #e5e7eb', overflow: 'hidden'
-            }}>
+            <div
+              key={i}
+              style={{
+                ...(isMobile
+                  ? { minWidth: '88%', flex: '0 0 88%', scrollSnapAlign: 'start' }
+                  : {}),
+                background: '#fff', borderRadius: '14px',
+                border: '1px solid #e5e7eb', overflow: 'hidden'
+              }}>
               <div style={{
                 height: '120px',
                 background: 'linear-gradient(90deg, #f3f4f6, #e5e7eb, #f3f4f6)',
@@ -441,11 +457,20 @@ const AdminCharities = () => {
           </p>
         </div>
       ) : (
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))',
-          gap: '1.2rem'
-        }}>
+        <div
+          className={isMobile ? 'hide-scrollbar' : undefined}
+          style={{
+            display: isMobile ? 'flex' : 'grid',
+            gridTemplateColumns: isMobile ? undefined : 'repeat(auto-fill, minmax(340px, 1fr))',
+            gap: '1.2rem',
+            ...(isMobile
+              ? {
+                  overflowX: 'auto',
+                  scrollSnapType: 'x mandatory',
+                  paddingBottom: '0.25rem'
+                }
+              : {})
+          }}>
           {filteredCharities.map(charity => {
             const isEditing = editingId === charity.id
             const isAddingEvent = addingEventTo === charity.id
@@ -453,6 +478,9 @@ const AdminCharities = () => {
 
             return (
               <div key={charity.id} style={{
+                ...(isMobile
+                  ? { minWidth: '88%', flex: '0 0 88%', scrollSnapAlign: 'start' }
+                  : {}),
                 background: '#fff', borderRadius: '16px',
                 border: `1px solid ${isEditing
                   ? 'rgba(108,99,255,0.3)' : '#e5e7eb'}`,
