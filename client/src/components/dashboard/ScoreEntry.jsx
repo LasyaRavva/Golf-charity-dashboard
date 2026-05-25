@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { getScores, addScore, editScore, deleteScore } from '../../services/scoreService'
+import { useResponsive } from '../../hooks/useResponsive'
 
 const ScoreEntry = () => {
   const [scores, setScores] = useState([])
@@ -13,6 +14,7 @@ const ScoreEntry = () => {
   const [message, setMessage] = useState({ text: '', type: '' })
   const [focused, setFocused] = useState('')
   const [deleteConfirm, setDeleteConfirm] = useState(null)
+  const { isMobile } = useResponsive()
 
   useEffect(() => { fetchScores() }, [])
 
@@ -127,7 +129,7 @@ const ScoreEntry = () => {
       {/* ─── HEADER STATS ─── */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(3, 1fr)',
+        gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
         gap: '1rem', marginBottom: '2rem'
       }}>
         {[
@@ -210,7 +212,7 @@ const ScoreEntry = () => {
         </p>
 
         <div style={{
-          display: 'grid', gridTemplateColumns: '1fr 1fr auto',
+          display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr auto',
           gap: '1rem', alignItems: 'end'
         }}>
           <div>
@@ -296,7 +298,8 @@ const ScoreEntry = () => {
       }}>
         <div style={{
           display: 'flex', justifyContent: 'space-between',
-          alignItems: 'center', marginBottom: '1.5rem'
+          alignItems: isMobile ? 'flex-start' : 'center', marginBottom: '1.5rem',
+          flexDirection: isMobile ? 'column' : 'row', gap: '1rem'
         }}>
           <div>
             <h3 style={{
@@ -358,7 +361,8 @@ const ScoreEntry = () => {
 
               return (
                 <div key={s.id} style={{
-                  display: 'flex', alignItems: 'center', gap: '1rem',
+                  display: 'flex', alignItems: isMobile ? 'flex-start' : 'center', gap: '1rem',
+                  flexDirection: isMobile ? 'column' : 'row',
                   padding: '1rem 1.2rem',
                   background: isEditing ? 'rgba(108,99,255,0.04)' : '#f8f8fc',
                   borderRadius: '12px',
@@ -406,7 +410,7 @@ const ScoreEntry = () => {
                   )}
 
                   {/* Date */}
-                  <div style={{ flex: 1 }}>
+                  <div style={{ flex: 1, width: isMobile ? '100%' : 'auto' }}>
                     {!isEditing ? (
                       <div>
                         <div style={{
@@ -452,7 +456,7 @@ const ScoreEntry = () => {
                   )}
 
                   {/* Actions */}
-                  <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
+                  <div style={{ display: 'flex', gap: '6px', flexShrink: 0, width: isMobile ? '100%' : 'auto', flexWrap: 'wrap' }}>
                     {isDeleteConfirm ? (
                       <>
                         <button

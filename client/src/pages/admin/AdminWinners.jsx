@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import api from '../../services/api'
+import { useResponsive } from '../../hooks/useResponsive'
 
 const AdminWinners = () => {
   const [winners, setWinners] = useState([])
@@ -10,6 +11,7 @@ const AdminWinners = () => {
   const [search, setSearch] = useState('')
   const [selectedWinner, setSelectedWinner] = useState(null)
   const [confirmAction, setConfirmAction] = useState(null)
+  const { isMobile } = useResponsive()
 
   useEffect(() => { fetchWinners() }, [])
 
@@ -105,10 +107,12 @@ const AdminWinners = () => {
     3: { icon: '🥉', label: '3-Match', color: '#f59e0b', bg: 'rgba(245,158,11,0.08)' }
   }
 
+  const showWinnerList = !isMobile || !selectedWinner
+  const showWinnerDetails = !isMobile ? true : !!selectedWinner
+
   return (
     <div>
 
-      {/* Header */}
       <div style={{ marginBottom: '1.5rem' }}>
         <h1 style={{
           fontFamily: 'Syne, sans-serif', fontWeight: 800,
@@ -122,7 +126,6 @@ const AdminWinners = () => {
         </p>
       </div>
 
-      {/* Message */}
       {message.text && (
         <div style={{
           padding: '0.8rem 1rem', borderRadius: '8px', marginBottom: '1rem',
@@ -133,7 +136,6 @@ const AdminWinners = () => {
         }}>{message.text}</div>
       )}
 
-      {/* Stats row */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
@@ -149,7 +151,7 @@ const AdminWinners = () => {
         ].map((stat, i) => (
           <div key={i} style={{
             background: '#fff', borderRadius: '12px',
-            padding: '1.1rem', border: `1px solid ${stat.alert ? stat.color + '40' : '#e5e7eb'}`,
+            padding: '1.1rem', border: `1px solid ${stat.alert ? `${stat.color}40` : '#e5e7eb'}`,
             display: 'flex', alignItems: 'center', gap: '10px',
             transition: 'all 0.2s'
           }}>
@@ -172,219 +174,228 @@ const AdminWinners = () => {
         ))}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: '1.5rem' }}>
-
-        {/* ─── WINNERS LIST ─── */}
-        <div style={{
-          background: '#fff', borderRadius: '16px',
-          border: '1px solid #e5e7eb', overflow: 'hidden'
-        }}>
-
-          {/* Search + Filter tabs */}
-          <div style={{ padding: '1rem 1.2rem', borderBottom: '1px solid #f3f4f6' }}>
-            <div style={{ position: 'relative', marginBottom: '0.8rem' }}>
-              <span style={{
-                position: 'absolute', left: '0.8rem', top: '50%',
-                transform: 'translateY(-50%)', color: '#9ca3af', fontSize: '0.85rem'
-              }}>🔍</span>
-              <input
-                type="text"
-                placeholder="Search by name, email or month..."
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                style={{
-                  width: '100%', padding: '0.65rem 0.8rem 0.65rem 2.2rem',
-                  borderRadius: '8px', border: '1px solid #e5e7eb',
-                  background: '#f8f8fc', fontSize: '0.85rem',
-                  color: '#1a1a2e', outline: 'none', boxSizing: 'border-box'
-                }}
-              />
-            </div>
-
-            <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-              {[
-                { id: 'all', label: 'All' },
-                { id: 'pending', label: 'Pending' },
-                { id: 'approved', label: 'Approved' },
-                { id: 'unpaid', label: 'Unpaid' },
-                { id: 'paid', label: 'Paid' },
-                { id: 'rejected', label: 'Rejected' }
-              ].map(f => (
-                <button
-                  key={f.id}
-                  onClick={() => setFilter(f.id)}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: isMobile ? '1fr' : '1fr 380px',
+        gap: '1.5rem'
+      }}>
+        {showWinnerList && (
+          <div style={{
+            background: '#fff', borderRadius: '16px',
+            border: '1px solid #e5e7eb', overflow: 'hidden'
+          }}>
+            <div style={{ padding: '1rem 1.2rem', borderBottom: '1px solid #f3f4f6' }}>
+              <div style={{ position: 'relative', marginBottom: '0.8rem' }}>
+                <span style={{
+                  position: 'absolute', left: '0.8rem', top: '50%',
+                  transform: 'translateY(-50%)', color: '#9ca3af', fontSize: '0.85rem'
+                }}>🔍</span>
+                <input
+                  type="text"
+                  placeholder="Search by name, email or month..."
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
                   style={{
-                    padding: '4px 12px', borderRadius: '50px',
-                    border: `1px solid ${filter === f.id ? '#6c63ff' : '#e5e7eb'}`,
-                    background: filter === f.id ? 'rgba(108,99,255,0.08)' : '#fff',
-                    color: filter === f.id ? '#6c63ff' : '#6b7280',
-                    fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', gap: '4px'
-                  }}>
-                  {f.label}
-                  {counts[f.id] > 0 && (
-                    <span style={{
-                      background: filter === f.id ? '#6c63ff' : '#e5e7eb',
-                      color: filter === f.id ? '#fff' : '#9ca3af',
-                      padding: '0 5px', borderRadius: '50px',
-                      fontSize: '0.68rem', fontWeight: 700
-                    }}>{counts[f.id]}</span>
-                  )}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Winners list */}
-          <div style={{ overflowY: 'auto', maxHeight: '65vh' }}>
-            {fetching ? (
-              [1, 2, 3, 4].map(i => (
-                <div key={i} style={{
-                  padding: '1.1rem 1.2rem',
-                  borderBottom: '1px solid #f3f4f6',
-                  display: 'flex', gap: '12px', alignItems: 'center'
-                }}>
-                  <div style={{
-                    width: '40px', height: '40px', borderRadius: '10px',
-                    background: '#f3f4f6', flexShrink: 0
-                  }} />
-                  <div style={{ flex: 1 }}>
-                    {[60, 80, 40].map((w, j) => (
-                      <div key={j} style={{
-                        height: '10px', width: `${w}%`,
-                        background: '#f3f4f6', borderRadius: '4px',
-                        marginBottom: j < 2 ? '6px' : 0
-                      }} />
-                    ))}
-                  </div>
-                </div>
-              ))
-            ) : filteredWinners.length === 0 ? (
-              <div style={{
-                padding: '4rem', textAlign: 'center'
-              }}>
-                <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🏆</div>
-                <p style={{ color: '#9ca3af', fontSize: '0.9rem', fontWeight: 500 }}>
-                  No winners found
-                </p>
+                    width: '100%', padding: '0.65rem 0.8rem 0.65rem 2.2rem',
+                    borderRadius: '8px', border: '1px solid #e5e7eb',
+                    background: '#f8f8fc', fontSize: '0.85rem',
+                    color: '#1a1a2e', outline: 'none', boxSizing: 'border-box'
+                  }}
+                />
               </div>
-            ) : (
-              filteredWinners.map(winner => {
-                const tier = tierConfig[winner.match_tier] || tierConfig[3]
-                const vColors = verifyColors[winner.verification_status] || verifyColors.pending
-                const pColors = payColors[winner.payment_status] || payColors.pending
-                const isSelected = selectedWinner?.id === winner.id
 
-                return (
-                  <div
-                    key={winner.id}
-                    onClick={() => setSelectedWinner(
-                      isSelected ? null : winner
-                    )}
+              <div style={{
+                display: 'flex',
+                gap: '4px',
+                flexWrap: 'nowrap',
+                overflowX: 'auto',
+                overflowY: 'hidden',
+                scrollbarWidth: 'none',
+                msOverflowStyle: 'none',
+                whiteSpace: 'nowrap'
+              }}>
+                {[
+                  { id: 'all', label: 'All' },
+                  { id: 'pending', label: 'Pending' },
+                  { id: 'approved', label: 'Approved' },
+                  { id: 'unpaid', label: 'Unpaid' },
+                  { id: 'paid', label: 'Paid' },
+                  { id: 'rejected', label: 'Rejected' }
+                ].map(f => (
+                  <button
+                    key={f.id}
+                    onClick={() => setFilter(f.id)}
                     style={{
-                      padding: '1rem 1.2rem',
-                      borderBottom: '1px solid #f3f4f6',
-                      cursor: 'pointer',
-                      background: isSelected ? 'rgba(108,99,255,0.04)' : 'transparent',
-                      borderLeft: `3px solid ${isSelected ? '#6c63ff' : 'transparent'}`,
-                      transition: 'all 0.15s'
-                    }}
-                    onMouseEnter={e => {
-                      if (!isSelected)
-                        e.currentTarget.style.background = '#f8f8fc'
-                    }}
-                    onMouseLeave={e => {
-                      if (!isSelected)
-                        e.currentTarget.style.background = 'transparent'
+                      padding: '4px 12px', borderRadius: '50px',
+                      border: `1px solid ${filter === f.id ? '#6c63ff' : '#e5e7eb'}`,
+                      background: filter === f.id ? 'rgba(108,99,255,0.08)' : '#fff',
+                      color: filter === f.id ? '#6c63ff' : '#6b7280',
+                      fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', gap: '4px',
+                      flexShrink: 0
                     }}>
+                    {f.label}
+                    {counts[f.id] > 0 && (
+                      <span style={{
+                        background: filter === f.id ? '#6c63ff' : '#e5e7eb',
+                        color: filter === f.id ? '#fff' : '#9ca3af',
+                        padding: '0 5px', borderRadius: '50px',
+                        fontSize: '0.68rem', fontWeight: 700
+                      }}>{counts[f.id]}</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
 
+            <div style={{
+              overflowY: 'auto',
+              maxHeight: '65vh',
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none'
+            }}>
+              {fetching ? (
+                [1, 2, 3, 4].map(i => (
+                  <div key={i} style={{
+                    padding: '1.1rem 1.2rem',
+                    borderBottom: '1px solid #f3f4f6',
+                    display: 'flex', gap: '12px', alignItems: 'center'
+                  }}>
                     <div style={{
-                      display: 'flex', alignItems: 'flex-start',
-                      gap: '12px'
-                    }}>
+                      width: '40px', height: '40px', borderRadius: '10px',
+                      background: '#f3f4f6', flexShrink: 0
+                    }} />
+                    <div style={{ flex: 1 }}>
+                      {[60, 80, 40].map((w, j) => (
+                        <div key={j} style={{
+                          height: '10px', width: `${w}%`,
+                          background: '#f3f4f6', borderRadius: '4px',
+                          marginBottom: j < 2 ? '6px' : 0
+                        }} />
+                      ))}
+                    </div>
+                  </div>
+                ))
+              ) : filteredWinners.length === 0 ? (
+                <div style={{ padding: '4rem', textAlign: 'center' }}>
+                  <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🏆</div>
+                  <p style={{ color: '#9ca3af', fontSize: '0.9rem', fontWeight: 500 }}>
+                    No winners found
+                  </p>
+                </div>
+              ) : (
+                filteredWinners.map(winner => {
+                  const tier = tierConfig[winner.match_tier] || tierConfig[3]
+                  const vColors = verifyColors[winner.verification_status] || verifyColors.pending
+                  const pColors = payColors[winner.payment_status] || payColors.pending
+                  const isSelected = selectedWinner?.id === winner.id
 
-                      {/* Tier icon */}
+                  return (
+                    <div
+                      key={winner.id}
+                      onClick={() => setSelectedWinner(isSelected ? null : winner)}
+                      style={{
+                        padding: '1rem 1.2rem',
+                        borderBottom: '1px solid #f3f4f6',
+                        cursor: 'pointer',
+                        background: isSelected ? 'rgba(108,99,255,0.04)' : 'transparent',
+                        borderLeft: `3px solid ${isSelected ? '#6c63ff' : 'transparent'}`,
+                        transition: 'all 0.15s'
+                      }}
+                      onMouseEnter={e => {
+                        if (!isSelected) e.currentTarget.style.background = '#f8f8fc'
+                      }}
+                      onMouseLeave={e => {
+                        if (!isSelected) e.currentTarget.style.background = 'transparent'
+                      }}>
                       <div style={{
-                        width: '42px', height: '42px', borderRadius: '10px',
-                        background: tier.bg,
-                        display: 'flex', alignItems: 'center',
-                        justifyContent: 'center', fontSize: '1.2rem', flexShrink: 0
-                      }}>{tier.icon}</div>
-
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        {/* Name + tier */}
+                        display: 'flex', alignItems: 'flex-start',
+                        gap: '12px'
+                      }}>
                         <div style={{
+                          width: '42px', height: '42px', borderRadius: '10px',
+                          background: tier.bg,
                           display: 'flex', alignItems: 'center',
-                          gap: '8px', marginBottom: '3px', flexWrap: 'wrap'
-                        }}>
-                          <span style={{
-                            fontSize: '0.88rem', fontWeight: 700, color: '#1a1a2e'
-                          }}>{winner.users?.name}</span>
-                          <div style={{
-                            background: tier.bg, border: `1px solid ${tier.color}30`,
-                            color: tier.color, padding: '2px 8px',
-                            borderRadius: '50px', fontSize: '0.68rem', fontWeight: 700
-                          }}>{tier.label}</div>
-                        </div>
+                          justifyContent: 'center', fontSize: '1.2rem', flexShrink: 0
+                        }}>{tier.icon}</div>
 
-                        {/* Email + month */}
-                        <div style={{
-                          fontSize: '0.75rem', color: '#9ca3af', marginBottom: '6px'
-                        }}>
-                          {winner.users?.email} · Draw {winner.draws?.month}
-                        </div>
-
-                        {/* Status badges */}
-                        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{
-                            background: vColors.bg, border: `1px solid ${vColors.border}`,
-                            color: vColors.text, padding: '2px 8px',
-                            borderRadius: '50px', fontSize: '0.68rem', fontWeight: 700
-                          }}>{winner.verification_status}</div>
-                          <div style={{
-                            background: pColors.bg, border: `1px solid ${pColors.border}`,
-                            color: pColors.text, padding: '2px 8px',
-                            borderRadius: '50px', fontSize: '0.68rem', fontWeight: 700
-                          }}>{winner.payment_status}</div>
-                          {!winner.proof_url && (
+                            display: 'flex', alignItems: 'center',
+                            gap: '8px', marginBottom: '3px', flexWrap: 'wrap'
+                          }}>
+                            <span style={{
+                              fontSize: '0.88rem', fontWeight: 700, color: '#1a1a2e'
+                            }}>{winner.users?.name}</span>
                             <div style={{
-                              background: 'rgba(239,68,68,0.06)',
-                              border: '1px solid rgba(239,68,68,0.15)',
-                              color: '#ef4444', padding: '2px 8px',
+                              background: tier.bg, border: `1px solid ${tier.color}30`,
+                              color: tier.color, padding: '2px 8px',
                               borderRadius: '50px', fontSize: '0.68rem', fontWeight: 700
-                            }}>No proof</div>
-                          )}
-                        </div>
-                      </div>
+                            }}>{tier.label}</div>
+                          </div>
 
-                      {/* Prize amount */}
-                      <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                        <div style={{
-                          fontFamily: 'Syne, sans-serif', fontWeight: 800,
-                          fontSize: '1rem', color: '#1a1a2e'
-                        }}>£{winner.prize_amount?.toFixed(2)}</div>
-                        <div style={{ fontSize: '0.7rem', color: '#9ca3af', marginTop: '2px' }}>
-                          prize
+                          <div style={{
+                            fontSize: '0.75rem', color: '#9ca3af', marginBottom: '6px'
+                          }}>
+                            {winner.users?.email} 
+                          </div>
+
+                          <div style={{
+                            fontSize: '0.75rem', color: '#9ca3af', marginBottom: '6px'
+                          }}>
+                            Draw {winner.draws?.month}
+                          </div>
+
+                          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                            <div style={{
+                              background: vColors.bg, border: `1px solid ${vColors.border}`,
+                              color: vColors.text, padding: '2px 8px',
+                              borderRadius: '50px', fontSize: '0.68rem', fontWeight: 700
+                            }}>{winner.verification_status}</div>
+                            <div style={{
+                              background: pColors.bg, border: `1px solid ${pColors.border}`,
+                              color: pColors.text, padding: '2px 8px',
+                              borderRadius: '50px', fontSize: '0.68rem', fontWeight: 700
+                            }}>{winner.payment_status}</div>
+                            {!winner.proof_url && (
+                              <div style={{
+                                background: 'rgba(239,68,68,0.06)',
+                                border: '1px solid rgba(239,68,68,0.15)',
+                                color: '#ef4444', padding: '2px 8px',
+                                borderRadius: '50px', fontSize: '0.68rem', fontWeight: 700
+                              }}>No proof</div>
+                            )}
+                          </div>
+                        </div>
+
+                        <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                          <div style={{
+                            fontFamily: 'Syne, sans-serif', fontWeight: 800,
+                            fontSize: '1rem', color: '#1a1a2e'
+                          }}>£{winner.prize_amount?.toFixed(2)}</div>
+                          <div style={{ fontSize: '0.7rem', color: '#9ca3af', marginTop: '2px' }}>
+                            prize
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                )
-              })
-            )}
+                  )
+                })
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* ─── WINNER DETAIL PANEL ─── */}
-        {selectedWinner ? (
+        {showWinnerDetails && (selectedWinner ? (
           <div style={{
             background: '#fff', borderRadius: '16px',
             border: '1px solid #e5e7eb', overflow: 'hidden',
-            alignSelf: 'flex-start', position: 'sticky', top: '1rem'
+            alignSelf: 'flex-start',
+            position: isMobile ? 'relative' : 'sticky',
+            top: isMobile ? 'auto' : '1rem'
           }}>
-
-            {/* Header */}
             <div style={{
+              position: 'relative',
               padding: '1.4rem', borderBottom: '1px solid #f3f4f6',
               background: 'linear-gradient(135deg, #f8f8fc, #fff)'
             }}>
@@ -408,42 +419,37 @@ const AdminWinners = () => {
                 </div>
                 <button
                   onClick={() => setSelectedWinner(null)}
+                  aria-label="Close winner details"
                   style={{
-                    background: '#f3f4f6', border: '1px solid #e5e7eb',
-                    color: '#9ca3af', width: '28px', height: '28px',
-                    borderRadius: '6px', cursor: 'pointer',
-                    display: 'flex', alignItems: 'center',
-                    justifyContent: 'center', fontSize: '0.8rem', flexShrink: 0
-                  }}>✕</button>
+                    background: isMobile ? '#ef4444' : '#f3f4f6',
+                    border: isMobile ? 'none' : '1px solid #e5e7eb',
+                    color: isMobile ? '#fff' : '#9ca3af',
+                    width: isMobile ? '34px' : '28px',
+                    height: isMobile ? '34px' : '28px',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '1rem',
+                    flexShrink: 0,
+                    boxShadow: isMobile ? '0 8px 20px rgba(239,68,68,0.25)' : 'none',
+                    position: isMobile ? 'absolute' : 'static',
+                    top: isMobile ? '1rem' : 'auto',
+                    right: isMobile ? '1rem' : 'auto'
+                  }}>
+                  ×
+                </button>
               </div>
             </div>
 
             <div style={{ padding: '1.4rem' }}>
-
-              {/* Win details */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', marginBottom: '1.4rem' }}>
                 {[
-                  {
-                    label: 'Draw Month',
-                    value: selectedWinner.draws?.month,
-                    icon: '📅'
-                  },
-                  {
-                    label: 'Match Tier',
-                    value: `${selectedWinner.match_tier}-Number Match`,
-                    icon: tierConfig[selectedWinner.match_tier]?.icon || '🏆'
-                  },
-                  {
-                    label: 'Prize Amount',
-                    value: `£${selectedWinner.prize_amount?.toFixed(2)}`,
-                    icon: '💰',
-                    valueColor: '#22c55e'
-                  },
-                  {
-                    label: 'Draw Numbers',
-                    value: selectedWinner.draws?.draw_numbers?.join(', ') || '—',
-                    icon: '🎯'
-                  }
+                  { label: 'Draw Month', value: selectedWinner.draws?.month, icon: '🗓️' },
+                  { label: 'Match Tier', value: `${selectedWinner.match_tier}-Number Match`, icon: tierConfig[selectedWinner.match_tier]?.icon || '🏆' },
+                  { label: 'Prize Amount', value: `£${selectedWinner.prize_amount?.toFixed(2)}`, icon: '💰', valueColor: '#22c55e' },
+                  { label: 'Draw Numbers', value: selectedWinner.draws?.draw_numbers?.join(', ') || '—', icon: '🎯' }
                 ].map((item, i) => (
                   <div key={i} style={{
                     display: 'flex', alignItems: 'center', gap: '10px',
@@ -465,7 +471,6 @@ const AdminWinners = () => {
                 ))}
               </div>
 
-              {/* Status badges */}
               <div style={{
                 display: 'grid', gridTemplateColumns: '1fr 1fr',
                 gap: '0.6rem', marginBottom: '1.4rem'
@@ -501,7 +506,6 @@ const AdminWinners = () => {
                 ))}
               </div>
 
-              {/* Proof */}
               <div style={{ marginBottom: '1.4rem' }}>
                 <div style={{
                   fontSize: '0.75rem', fontWeight: 700,
@@ -562,10 +566,7 @@ const AdminWinners = () => {
                 )}
               </div>
 
-              {/* Action buttons */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-
-                {/* Verification actions */}
                 {selectedWinner.verification_status === 'pending' && (
                   <>
                     <div style={{
@@ -575,9 +576,7 @@ const AdminWinners = () => {
                     }}>Verification</div>
                     <div style={{ display: 'flex', gap: '0.6rem' }}>
                       <button
-                        onClick={() => setConfirmAction({
-                          type: 'approve', id: selectedWinner.id
-                        })}
+                        onClick={() => setConfirmAction({ type: 'approve', id: selectedWinner.id })}
                         style={{
                           flex: 1,
                           background: 'rgba(34,197,94,0.08)',
@@ -592,9 +591,7 @@ const AdminWinners = () => {
                         ✅ Approve
                       </button>
                       <button
-                        onClick={() => setConfirmAction({
-                          type: 'reject', id: selectedWinner.id
-                        })}
+                        onClick={() => setConfirmAction({ type: 'reject', id: selectedWinner.id })}
                         style={{
                           flex: 1,
                           background: 'rgba(239,68,68,0.08)',
@@ -612,7 +609,6 @@ const AdminWinners = () => {
                   </>
                 )}
 
-                {/* Payout action */}
                 {selectedWinner.verification_status === 'approved' &&
                   selectedWinner.payment_status === 'pending' && (
                     <>
@@ -622,9 +618,7 @@ const AdminWinners = () => {
                         textTransform: 'uppercase', marginBottom: '2px'
                       }}>Payment</div>
                       <button
-                        onClick={() => setConfirmAction({
-                          type: 'payout', id: selectedWinner.id
-                        })}
+                        onClick={() => setConfirmAction({ type: 'payout', id: selectedWinner.id })}
                         style={{
                           background: '#6c63ff', color: '#fff',
                           border: 'none', padding: '0.85rem',
@@ -646,7 +640,6 @@ const AdminWinners = () => {
                     </>
                   )}
 
-                {/* Already paid */}
                 {selectedWinner.payment_status === 'paid' && (
                   <div style={{
                     padding: '0.85rem', background: 'rgba(34,197,94,0.06)',
@@ -662,7 +655,6 @@ const AdminWinners = () => {
                   </div>
                 )}
 
-                {/* Rejected */}
                 {selectedWinner.verification_status === 'rejected' && (
                   <div style={{
                     padding: '0.85rem', background: 'rgba(239,68,68,0.04)',
@@ -681,28 +673,29 @@ const AdminWinners = () => {
             </div>
           </div>
         ) : (
-          <div style={{
-            background: '#fff', borderRadius: '16px',
-            border: '1px solid #e5e7eb',
-            display: 'flex', alignItems: 'center',
-            justifyContent: 'center', minHeight: '300px',
-            alignSelf: 'flex-start'
-          }}>
-            <div style={{ textAlign: 'center', padding: '2rem' }}>
-              <div style={{ fontSize: '2.5rem', marginBottom: '0.8rem' }}>👈</div>
-              <p style={{
-                color: '#9ca3af', fontSize: '0.88rem',
-                fontWeight: 500, marginBottom: '4px'
-              }}>Select a winner to review</p>
-              <p style={{ color: '#d1d5db', fontSize: '0.8rem' }}>
-                Click any winner from the list
-              </p>
+          !isMobile && (
+            <div style={{
+              background: '#fff', borderRadius: '16px',
+              border: '1px solid #e5e7eb',
+              display: 'flex', alignItems: 'center',
+              justifyContent: 'center', minHeight: '300px',
+              alignSelf: 'flex-start'
+            }}>
+              <div style={{ textAlign: 'center', padding: '2rem' }}>
+                <div style={{ fontSize: '2.5rem', marginBottom: '0.8rem' }}>👈</div>
+                <p style={{
+                  color: '#9ca3af', fontSize: '0.88rem',
+                  fontWeight: 500, marginBottom: '4px'
+                }}>Select a winner to review</p>
+                <p style={{ color: '#d1d5db', fontSize: '0.8rem' }}>
+                  Click any winner from the list
+                </p>
+              </div>
             </div>
-          </div>
-        )}
+          )
+        ))}
       </div>
 
-      {/* ─── CONFIRM ACTION MODAL ─── */ }
       {confirmAction && (
         <div style={{
           position: 'fixed', inset: 0, zIndex: 200,
@@ -733,7 +726,7 @@ const AdminWinners = () => {
                   color: '#6b7280', fontSize: '0.88rem',
                   lineHeight: 1.6, marginBottom: '1.5rem'
                 }}>
-                  This will approve the winner's submission and notify them by email.
+                  This will approve the winner&apos;s submission and notify them by email.
                   Their payment will then be awaiting processing.
                 </p>
                 <div style={{ display: 'flex', gap: '0.8rem' }}>
@@ -776,7 +769,7 @@ const AdminWinners = () => {
                   color: '#6b7280', fontSize: '0.88rem',
                   lineHeight: 1.6, marginBottom: '1.5rem'
                 }}>
-                  This will reject the winner's submission and notify them by email.
+                  This will reject the winner&apos;s submission and notify them by email.
                   They will not receive a payout.
                 </p>
                 <div style={{ display: 'flex', gap: '0.8rem' }}>

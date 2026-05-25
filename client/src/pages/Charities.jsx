@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getCharities, selectCharity, makeDonation } from '../services/charityService'
 import { useAuth } from '../context/AuthContext'
+import { useResponsive } from '../hooks/useResponsive'
 
 const Charities = () => {
   const navigate = useNavigate()
@@ -14,6 +15,7 @@ const Charities = () => {
   const [donating, setDonating] = useState(null)
   const [donationAmount, setDonationAmount] = useState('')
   const [activeFilter, setActiveFilter] = useState('all')
+  const { isMobile, isTablet } = useResponsive()
 
   useEffect(() => { fetchCharities() }, [search])
 
@@ -78,9 +80,9 @@ const Charities = () => {
 
       {/* ─── NAV ─── */}
       <nav style={{
-        background: '#0f0f1a', padding: '1.2rem 6%',
+        background: '#0f0f1a', padding: isMobile ? '1rem 5%' : '1.2rem 6%',
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        position: 'sticky', top: 0, zIndex: 100
+        position: 'sticky', top: 0, zIndex: 100, gap: '1rem', flexWrap: 'wrap'
       }}>
         <div
           onClick={() => navigate('/')}
@@ -90,7 +92,7 @@ const Charities = () => {
           }}>
           Golf<span style={{ color: '#6c63ff' }}>Gives</span>
         </div>
-        <div style={{ display: 'flex', gap: '0.8rem' }}>
+        <div style={{ display: 'flex', gap: '0.8rem', width: isMobile ? '100%' : 'auto', flexWrap: 'wrap' }}>
           {user ? (
             <button
               onClick={() => navigate('/dashboard')}
@@ -124,7 +126,7 @@ const Charities = () => {
       {/* ─── HERO ─── */}
       <div style={{
         background: 'linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%)',
-        padding: '4rem 6% 5rem', textAlign: 'center'
+        padding: isMobile ? '3rem 5% 4rem' : '4rem 6% 5rem', textAlign: 'center'
       }}>
         <div style={{
           display: 'inline-flex', alignItems: 'center', gap: '8px',
@@ -213,7 +215,7 @@ const Charities = () => {
       {/* ─── MESSAGE ─── */}
       {message.text && (
         <div style={{
-          margin: '1.5rem 6% 0',
+          margin: isMobile ? '1.5rem 5% 0' : '1.5rem 6% 0',
           padding: '0.9rem 1.2rem', borderRadius: '10px',
           background: message.type === 'error' ? '#fef2f2' : '#f0fdf4',
           border: `1px solid ${message.type === 'error' ? '#fecaca' : '#bbf7d0'}`,
@@ -225,7 +227,7 @@ const Charities = () => {
       )}
 
       {/* ─── CONTENT ─── */}
-      <div style={{ padding: '3rem 6%' }}>
+      <div style={{ padding: isMobile ? '2rem 5%' : '3rem 6%' }}>
 
         {/* Featured Charity */}
         {featured.length > 0 && !search && (
@@ -247,24 +249,59 @@ const Charities = () => {
               }}>SPOTLIGHT</div>
             </div>
 
-            {featured.map(charity => (
-              <FeaturedCard
-                key={charity.id}
-                charity={charity}
-                onSelect={handleSelect}
-                onDonate={setDonating}
-                selecting={selecting}
-                user={user}
-                navigate={navigate}
-              />
-            ))}
+            {isMobile ? (
+              <div
+                className="hide-scrollbar"
+                style={{
+                  display: 'flex',
+                  gap: '1rem',
+                  overflowX: 'auto',
+                  scrollSnapType: 'x mandatory',
+                  paddingBottom: '0.25rem'
+                }}>
+                {featured.map(charity => (
+                  <div
+                    key={charity.id}
+                    style={{
+                      minWidth: '88%',
+                      flex: '0 0 88%',
+                      scrollSnapAlign: 'start'
+                    }}>
+                    <FeaturedCard
+                      charity={charity}
+                      onSelect={handleSelect}
+                      onDonate={setDonating}
+                      selecting={selecting}
+                      user={user}
+                      navigate={navigate}
+                      isMobile={isMobile}
+                      isTablet={isTablet}
+                    />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              featured.map(charity => (
+                <FeaturedCard
+                  key={charity.id}
+                  charity={charity}
+                  onSelect={handleSelect}
+                  onDonate={setDonating}
+                  selecting={selecting}
+                  user={user}
+                  navigate={navigate}
+                  isMobile={isMobile}
+                  isTablet={isTablet}
+                />
+              ))
+            )}
           </div>
         )}
 
         {/* Filter tabs */}
         {!search && (
           <div style={{
-            display: 'flex', gap: '0.5rem', marginBottom: '1.5rem'
+            display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', flexWrap: 'wrap'
           }}>
             {[
               { id: 'all', label: `All Charities (${all.length})` },
@@ -274,12 +311,17 @@ const Charities = () => {
                 key={f.id}
                 onClick={() => setActiveFilter(f.id)}
                 style={{
-                  padding: '0.5rem 1.2rem', borderRadius: '8px',
+                  padding: isMobile ? '0.8rem 1.25rem' : '0.85rem 1.4rem',
+                  borderRadius: '10px',
                   border: `1px solid ${activeFilter === f.id ? '#6c63ff' : '#e5e7eb'}`,
                   background: activeFilter === f.id ? 'rgba(108,99,255,0.08)' : '#fff',
                   color: activeFilter === f.id ? '#6c63ff' : '#6b7280',
-                  fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer',
-                  transition: 'all 0.15s'
+                  fontSize: isMobile ? '0.95rem' : '0.92rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s',
+                  minHeight: '48px',
+                  whiteSpace: 'nowrap'
                 }}>
                 {f.label}
               </button>
@@ -298,13 +340,29 @@ const Charities = () => {
           </h2>
 
           {loading ? (
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-              gap: '1.5rem'
-            }}>
+            <div
+              className={isMobile ? 'hide-scrollbar' : undefined}
+              style={{
+                display: 'grid',
+                gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(280px, 1fr))',
+                gap: '1.5rem',
+                ...(isMobile
+                  ? {
+                      display: 'flex',
+                      overflowX: 'auto',
+                      scrollSnapType: 'x mandatory',
+                      paddingBottom: '0.25rem'
+                    }
+                  : {})
+              }}>
               {[1, 2, 3, 4, 5, 6].map(i => (
-                <SkeletonCard key={i} />
+                <div
+                  key={i}
+                  style={isMobile
+                    ? { minWidth: '88%', flex: '0 0 88%', scrollSnapAlign: 'start' }
+                    : undefined}>
+                  <SkeletonCard />
+                </div>
               ))}
             </div>
           ) : filtered.length === 0 ? (
@@ -321,25 +379,40 @@ const Charities = () => {
               </p>
             </div>
           ) : (
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-              gap: '1.5rem'
-            }}>
+            <div
+              className={isMobile ? 'hide-scrollbar' : undefined}
+              style={{
+                display: 'grid',
+                gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(280px, 1fr))',
+                gap: '1.5rem',
+                ...(isMobile
+                  ? {
+                      display: 'flex',
+                      overflowX: 'auto',
+                      scrollSnapType: 'x mandatory',
+                      paddingBottom: '0.25rem'
+                    }
+                  : {})
+              }}>
               {(search ? charities : filtered).map(charity => (
-                <CharityCard
+                <div
                   key={charity.id}
-                  charity={charity}
-                  onSelect={handleSelect}
-                  onDonate={setDonating}
-                  selecting={selecting}
-                  donating={donating}
-                  donationAmount={donationAmount}
-                  setDonationAmount={setDonationAmount}
-                  onConfirmDonate={handleDonate}
-                  user={user}
-                  navigate={navigate}
-                />
+                  style={isMobile
+                    ? { minWidth: '88%', flex: '0 0 88%', scrollSnapAlign: 'start' }
+                    : undefined}>
+                  <CharityCard
+                    charity={charity}
+                    onSelect={handleSelect}
+                    onDonate={setDonating}
+                    selecting={selecting}
+                    donating={donating}
+                    donationAmount={donationAmount}
+                    setDonationAmount={setDonationAmount}
+                    onConfirmDonate={handleDonate}
+                    user={user}
+                    navigate={navigate}
+                  />
+                </div>
               ))}
             </div>
           )}
@@ -349,7 +422,7 @@ const Charities = () => {
       {/* ─── BOTTOM CTA ─── */}
       <div style={{
         background: 'linear-gradient(135deg, #0f0f1a, #1a1a2e)',
-        padding: '4rem 6%', textAlign: 'center'
+        padding: isMobile ? '3rem 5%' : '4rem 6%', textAlign: 'center'
       }}>
         <h2 style={{
           fontFamily: 'Syne, sans-serif', fontSize: '1.8rem',
@@ -378,7 +451,7 @@ const Charities = () => {
 }
 
 // ─── FEATURED CARD ───
-const FeaturedCard = ({ charity, onSelect, onDonate, selecting, user, navigate }) => {
+const FeaturedCard = ({ charity, onSelect, onDonate, selecting, user, navigate, isMobile, isTablet }) => {
   const [expanded, setExpanded] = useState(false)
 
   return (
@@ -387,7 +460,7 @@ const FeaturedCard = ({ charity, onSelect, onDonate, selecting, user, navigate }
       border: '2px solid rgba(245,158,11,0.2)',
       overflow: 'hidden',
       boxShadow: '0 8px 40px rgba(245,158,11,0.08)',
-      display: 'grid', gridTemplateColumns: '1fr 1.2fr'
+      display: 'grid', gridTemplateColumns: isTablet ? '1fr' : '1fr 1.2fr'
     }}>
       {/* Image */}
       <div style={{
@@ -409,7 +482,7 @@ const FeaturedCard = ({ charity, onSelect, onDonate, selecting, user, navigate }
       </div>
 
       {/* Content */}
-      <div style={{ padding: '2.5rem' }}>
+      <div style={{ padding: isMobile ? '1.5rem' : '2.5rem' }}>
         <h3 style={{
           fontFamily: 'Syne, sans-serif', fontWeight: 800,
           fontSize: '1.4rem', color: '#1a1a2e',
@@ -467,7 +540,7 @@ const FeaturedCard = ({ charity, onSelect, onDonate, selecting, user, navigate }
           </div>
         )}
 
-        <div style={{ display: 'flex', gap: '0.8rem' }}>
+        <div style={{ display: 'flex', gap: '0.8rem', flexDirection: isMobile ? 'column' : 'row' }}>
           <button
             onClick={() => onSelect(charity.id, charity.name)}
             disabled={selecting === charity.id}

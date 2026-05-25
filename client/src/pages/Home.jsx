@@ -1,13 +1,59 @@
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useState, useEffect } from 'react'
+import { useResponsive } from '../hooks/useResponsive'
+
+const AnimatedCount = ({ value, prefix = '', suffix = '', duration = 1400 }) => {
+  const [displayValue, setDisplayValue] = useState(0)
+
+  useEffect(() => {
+    let frameId
+    let startTime
+
+    const step = (timestamp) => {
+      if (!startTime) startTime = timestamp
+      const progress = Math.min((timestamp - startTime) / duration, 1)
+      setDisplayValue(Math.round(value * progress))
+
+      if (progress < 1) {
+        frameId = window.requestAnimationFrame(step)
+      }
+    }
+
+    frameId = window.requestAnimationFrame(step)
+
+    return () => window.cancelAnimationFrame(frameId)
+  }, [duration, value])
+
+  return `${prefix}${displayValue}${suffix}`
+}
+
+const AnimatedMetric = ({ text, duration = 1400 }) => {
+  const match = text.match(/^([^0-9]*)(\d+)(.*)$/)
+
+  if (!match) return text
+
+  const [, prefix, value, suffix] = match
+
+  return (
+    <AnimatedCount
+      value={Number(value)}
+      prefix={prefix}
+      suffix={suffix}
+      duration={duration}
+    />
+  )
+}
 
 const Home = () => {
   const navigate = useNavigate()
   const { user, logout } = useAuth()
   const [scrolled, setScrolled] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const { isMobile, isTablet, isDesktop } = useResponsive()
 
   const handleLogout = () => {
+    setMobileMenuOpen(false)
     logout()
     window.location.assign('/login')
   }
@@ -18,62 +64,156 @@ const Home = () => {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
+  useEffect(() => {
+    if (!isMobile) setMobileMenuOpen(false)
+  }, [isMobile])
+
+  const closeMobileMenu = () => {
+    if (isMobile) setMobileMenuOpen(false)
+  }
+
+  const goToSubscribe = () => {
+    closeMobileMenu()
+    window.scrollTo({ top: 0, behavior: 'auto' })
+    navigate('/subscribe')
+  }
+
   return (
     <div style={{ fontFamily: "'DM Sans', sans-serif", background: '#f8f8fc', color: '#1a1a2e' }}>
 
       {/* ─── NAV ─── */}
       <nav style={{
         position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        padding: '1rem 6%',
+        display: 'flex', justifyContent: 'space-between', alignItems: isMobile ? 'stretch' : 'center',
+        flexDirection: isMobile ? 'column' : 'row',
+        gap: isMobile ? '0.8rem' : 0,
+        padding: isMobile ? '1rem 5%' : '1rem 6%',
         background: scrolled ? 'rgba(15,15,26,0.97)' : 'transparent',
         backdropFilter: 'blur(12px)',
         transition: 'background 0.3s',
         borderBottom: scrolled ? '1px solid rgba(255,255,255,0.08)' : 'none'
       }}>
         <div style={{
-          fontFamily: 'Syne, sans-serif', fontWeight: 800,
-          fontSize: '1.3rem', color: '#fff', letterSpacing: '-0.5px'
+          width: isMobile ? '100%' : 'auto',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between'
         }}>
-          Golf<span style={{ color: '#6c63ff' }}>Gives</span>
+          <div style={{
+            fontFamily: 'Syne, sans-serif', fontWeight: 800,
+            fontSize: '1.3rem', color: '#fff', letterSpacing: '-0.5px'
+          }}>
+            Golf<span style={{ color: '#6c63ff' }}>Gives</span>
+          </div>
+          {isMobile && (
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              style={{
+                width: '44px',
+                height: '44px',
+                background: 'rgba(255,255,255,0.05)',
+                border: '1px solid rgba(255,255,255,0.12)',
+                borderRadius: '12px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexDirection: 'column',
+                gap: '4px',
+                padding: 0
+              }}>
+              {[0, 1, 2].map(line => (
+                <span
+                  key={line}
+                  style={{
+                    width: '18px',
+                    height: '2px',
+                    borderRadius: '999px',
+                    background: '#fff',
+                    transition: 'transform 0.2s ease, opacity 0.2s ease',
+                    transform: mobileMenuOpen
+                      ? line === 0
+                        ? 'translateY(6px) rotate(45deg)'
+                        : line === 1
+                          ? 'scaleX(0)'
+                          : 'translateY(-6px) rotate(-45deg)'
+                      : 'none',
+                    opacity: mobileMenuOpen && line === 1 ? 0 : 1
+                  }}
+                />
+              ))}
+            </button>
+          )}
         </div>
-        <div style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
+        <div style={{
+          display: 'flex',
+          gap: isMobile ? '0.8rem' : '2rem',
+          alignItems: 'center',
+          flexDirection: isMobile ? 'column' : 'row',
+          width: isMobile ? '100%' : 'auto',
+          maxHeight: isMobile ? (mobileMenuOpen ? '320px' : '0') : 'none',
+          overflow: 'hidden',
+          opacity: isMobile ? (mobileMenuOpen ? 1 : 0) : 1,
+          pointerEvents: isMobile ? (mobileMenuOpen ? 'auto' : 'none') : 'auto',
+          transition: isMobile ? 'max-height 0.25s ease, opacity 0.2s ease' : 'none'
+        }}>
           {['How It Works', 'Charities', 'Prize Draws'].map(link => (
             <a key={link} href={`#${link.toLowerCase().replace(/ /g, '-')}`} style={{
               color: 'rgba(255,255,255,0.7)', textDecoration: 'none',
               fontSize: '0.9rem', fontWeight: 500, transition: 'color 0.2s'
             }}
+              onClick={closeMobileMenu}
               onMouseEnter={e => e.target.style.color = '#fff'}
               onMouseLeave={e => e.target.style.color = 'rgba(255,255,255,0.7)'}
             >{link}</a>
           ))}
           {user ? (
-            <div style={{ display: 'flex', gap: '0.8rem' }}>
-              <button onClick={() => navigate(user.role === 'admin' ? '/admin' : '/dashboard')} style={{
+            <div style={{ display: 'flex', gap: '0.8rem', width: isMobile ? '100%' : 'auto', flexWrap: 'wrap' }}>
+              <button onClick={() => {
+                goToSubscribe()
+              }} style={{
+                background: 'rgba(255,255,255,0.08)', color: '#fff', border: '1px solid rgba(255,255,255,0.22)',
+                padding: '0.6rem 1.4rem', borderRadius: '8px',
+                fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer',
+                flex: isMobile ? 1 : 'unset'
+              }}>Subscribe</button>
+              <button onClick={() => {
+                closeMobileMenu()
+                navigate(user.role === 'admin' ? '/admin' : '/dashboard')
+              }} style={{
                 background: '#6c63ff', color: '#fff', border: 'none',
                 padding: '0.6rem 1.4rem', borderRadius: '8px',
-                fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer'
+                fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer',
+                flex: isMobile ? 1 : 'unset'
               }}>Dashboard</button>
               <button onClick={handleLogout} style={{
                 background: 'transparent', color: '#fff',
                 border: '1px solid rgba(255,255,255,0.3)',
                 padding: '0.6rem 1.4rem', borderRadius: '8px',
-                fontSize: '0.9rem', fontWeight: 500, cursor: 'pointer'
+                fontSize: '0.9rem', fontWeight: 500, cursor: 'pointer',
+                flex: isMobile ? 1 : 'unset'
               }}>Logout</button>
             </div>
           ) : (
-            <div style={{ display: 'flex', gap: '0.8rem' }}>
-              <button onClick={() => navigate('/login')} style={{
+            <div style={{ display: 'flex', gap: '0.8rem', width: isMobile ? '100%' : 'auto', flexWrap: 'wrap' }}>
+              <button onClick={() => {
+                closeMobileMenu()
+                navigate('/login')
+              }} style={{
                 background: 'transparent', color: '#fff',
                 border: '1px solid rgba(255,255,255,0.3)',
                 padding: '0.6rem 1.4rem', borderRadius: '8px',
-                fontSize: '0.9rem', fontWeight: 500, cursor: 'pointer'
+                fontSize: '0.9rem', fontWeight: 500, cursor: 'pointer',
+                flex: isMobile ? 1 : 'unset'
               }}>Login</button>
-              <button onClick={() => navigate('/subscribe')} style={{
+              <button onClick={() => {
+                goToSubscribe()
+              }} style={{
                 background: '#6c63ff', color: '#fff', border: 'none',
                 padding: '0.6rem 1.4rem', borderRadius: '8px',
-                fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer'
-              }}>Get Started</button>
+                fontSize: '0.9rem', fontWeight: 600, cursor: 'pointer',
+                flex: isMobile ? 1 : 'unset'
+              }}>Subscribe</button>
             </div>
           )}
         </div>
@@ -84,24 +224,24 @@ const Home = () => {
         minHeight: '100vh',
         background: 'linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #16213e 100%)',
         display: 'flex', alignItems: 'center',
-        padding: '6rem 6% 4rem',
+        padding: isMobile ? '7.5rem 5% 4rem' : isTablet ? '8rem 6% 4rem' : '6rem 6% 4rem',
         position: 'relative', overflow: 'hidden'
       }}>
         {/* Background glow */}
         <div style={{
           position: 'absolute', top: '20%', right: '10%',
-          width: '500px', height: '500px', borderRadius: '50%',
+          width: isMobile ? '280px' : '500px', height: isMobile ? '280px' : '500px', borderRadius: '50%',
           background: 'radial-gradient(circle, rgba(108,99,255,0.15) 0%, transparent 70%)',
           pointerEvents: 'none'
         }} />
         <div style={{
           position: 'absolute', bottom: '10%', left: '5%',
-          width: '300px', height: '300px', borderRadius: '50%',
+          width: isMobile ? '180px' : '300px', height: isMobile ? '180px' : '300px', borderRadius: '50%',
           background: 'radial-gradient(circle, rgba(34,197,94,0.1) 0%, transparent 70%)',
           pointerEvents: 'none'
         }} />
 
-        <div style={{ maxWidth: '700px', position: 'relative', zIndex: 1 }}>
+        <div style={{ maxWidth: isDesktop ? '700px' : '100%', paddingRight: isDesktop ? '320px' : 0, position: 'relative', zIndex: 1 }}>
           {/* Tag */}
           <div style={{
             display: 'inline-flex', alignItems: 'center', gap: '8px',
@@ -167,7 +307,7 @@ const Home = () => {
 
           {/* Stats */}
           <div style={{
-            display: 'flex', gap: '3rem', marginTop: '4rem',
+            display: 'flex', gap: isMobile ? '1.5rem' : '3rem', marginTop: '4rem',
             flexWrap: 'wrap'
           }}>
             {[
@@ -179,7 +319,7 @@ const Home = () => {
                 <div style={{
                   fontFamily: 'Syne, sans-serif', fontSize: '2rem',
                   fontWeight: 800, color: '#fff', lineHeight: 1
-                }}>{stat.num}</div>
+                }}><AnimatedMetric text={stat.num} /></div>
                 <div style={{
                   fontSize: '0.8rem', color: 'rgba(255,255,255,0.4)',
                   marginTop: '4px', letterSpacing: '0.3px'
@@ -190,6 +330,7 @@ const Home = () => {
         </div>
 
         {/* Hero Card */}
+        {isDesktop && (
         <div style={{
           position: 'absolute', right: '6%', top: '50%',
           transform: 'translateY(-50%)',
@@ -197,8 +338,7 @@ const Home = () => {
           backdropFilter: 'blur(20px)',
           border: '1px solid rgba(255,255,255,0.1)',
           borderRadius: '20px', padding: '2rem',
-          width: '280px',
-          display: 'window.innerWidth > 1100 ? block : none'
+          width: '280px'
         }}>
           <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginBottom: '1rem', letterSpacing: '1px' }}>THIS MONTH'S JACKPOT</div>
           <div style={{ fontFamily: 'Syne, sans-serif', fontSize: '2.5rem', fontWeight: 800, color: '#22c55e' }}>£4,200</div>
@@ -224,6 +364,7 @@ const Home = () => {
             marginTop: '1rem'
           }}>Enter This Draw</button>
         </div>
+        )}
       </section>
 
       {/* ─── HOW IT WORKS ─── */}
@@ -291,8 +432,8 @@ const Home = () => {
         background: 'linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%)'
       }}>
         <div style={{
-          display: 'grid', gridTemplateColumns: '1fr 1fr',
-          gap: '5rem', alignItems: 'center', maxWidth: '1100px', margin: '0 auto'
+          display: 'grid', gridTemplateColumns: isTablet ? '1fr' : '1fr 1fr',
+          gap: isTablet ? '2rem' : '5rem', alignItems: 'center', maxWidth: '1100px', margin: '0 auto'
         }}>
           <div>
             <div style={{
@@ -341,7 +482,7 @@ const Home = () => {
           </div>
 
           {/* Impact Cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '1rem' }}>
             {[
               { num: '£50K+', label: 'Donated to charities', color: '#22c55e' },
               { num: '120+', label: 'Monthly winners', color: '#6c63ff' },
@@ -358,7 +499,7 @@ const Home = () => {
                   fontFamily: 'Syne, sans-serif',
                   fontSize: '2rem', fontWeight: 800,
                   color: card.color, lineHeight: 1
-                }}>{card.num}</div>
+                }}><AnimatedMetric text={card.num} /></div>
                 <div style={{
                   fontSize: '0.8rem', color: 'rgba(255,255,255,0.4)',
                   marginTop: '6px'

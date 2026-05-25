@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { createCheckout } from '../services/subscriptionService'
 import { useAuth } from '../context/AuthContext'
+import { useResponsive } from '../hooks/useResponsive'
 
 const Subscribe = () => {
   const navigate = useNavigate()
@@ -9,6 +10,7 @@ const Subscribe = () => {
   const [selected, setSelected] = useState('yearly')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const { isMobile } = useResponsive()
 
   const plans = [
     {
@@ -69,10 +71,12 @@ const Subscribe = () => {
       {/* ─── NAV ─── */}
       <nav style={{
         background: '#0f0f1a',
-        padding: '1.2rem 6%',
+        padding: isMobile ? '1rem 5%' : '1.2rem 6%',
         display: 'flex',
         justifyContent: 'space-between',
-        alignItems: 'center'
+        alignItems: 'center',
+        gap: '1rem',
+        flexWrap: 'wrap'
       }}>
         <div
           onClick={() => navigate('/')}
@@ -97,7 +101,7 @@ const Subscribe = () => {
       {/* ─── HEADER ─── */}
       <div style={{
         background: 'linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%)',
-        padding: '4rem 6% 6rem',
+        padding: isMobile ? '3rem 5% 5rem' : '4rem 6% 6rem',
         textAlign: 'center'
       }}>
         <div style={{
@@ -136,9 +140,9 @@ const Subscribe = () => {
       {/* ─── PLANS ─── */}
       <div style={{
         maxWidth: '860px', margin: '-3rem auto 0',
-        padding: '0 6% 5rem',
+        padding: isMobile ? '0 5% 4rem' : '0 6% 5rem',
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))',
+        gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(340px, 1fr))',
         gap: '1.5rem',
         position: 'relative', zIndex: 1
       }}>
@@ -153,7 +157,7 @@ const Subscribe = () => {
               style={{
                 background: '#fff',
                 borderRadius: '20px',
-                padding: '2.5rem',
+                padding: isMobile ? '2rem 1.25rem' : '2.5rem',
                 border: `2px solid ${isSelected ? '#6c63ff' : '#e5e7eb'}`,
                 cursor: 'pointer',
                 transition: 'all 0.25s',
@@ -283,7 +287,7 @@ const Subscribe = () => {
       {/* ─── CTA ─── */}
       <div style={{
         maxWidth: '860px', margin: '0 auto',
-        padding: '0 6% 2rem',
+        padding: isMobile ? '0 5% 2rem' : '0 6% 2rem',
         textAlign: 'center'
       }}>
         {error && (
@@ -342,7 +346,7 @@ const Subscribe = () => {
 
       {/* ─── FAQ ─── */}
       <div style={{
-        background: '#fff', padding: '4rem 6%',
+        background: '#fff', padding: isMobile ? '3rem 5%' : '4rem 6%',
         maxWidth: '700px', margin: '0 auto'
       }}>
         <h2 style={{

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useLocation, Outlet, Navigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import api from '../../services/api'
+import { useResponsive } from '../../hooks/useResponsive'
 
 // ─── ADMIN LAYOUT (shared sidebar for all admin pages) ───
 export const AdminLayout = () => {
@@ -9,10 +10,20 @@ export const AdminLayout = () => {
   const location = useLocation()
   const { user, logout } = useAuth()
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  const { isMobile, isTablet } = useResponsive()
 
   const handleLogout = () => {
+    if (isMobile) setSidebarOpen(false)
     logout()
     navigate('/login')
+  }
+
+  useEffect(() => {
+    setSidebarOpen(!isMobile)
+  }, [isMobile])
+
+  const closeMobileSidebar = () => {
+    if (isMobile) setSidebarOpen(false)
   }
 
   const navItems = [
@@ -40,12 +51,13 @@ export const AdminLayout = () => {
 
       {/* ─── SIDEBAR ─── */}
       <div style={{
-        width: sidebarOpen ? '240px' : '68px',
+        width: isMobile ? (sidebarOpen ? '100%' : '0') : sidebarOpen ? '240px' : '68px',
         background: '#0f0f1a',
         display: 'flex', flexDirection: 'column',
         position: 'fixed', left: 0, top: 0, bottom: 0,
         zIndex: 50, transition: 'width 0.25s ease',
-        height: '100dvh', overflow: 'hidden'
+        height: '100dvh', overflow: 'hidden',
+        boxShadow: isMobile && sidebarOpen ? '0 0 0 999px rgba(15,15,26,0.45)' : 'none'
       }}>
 
         {/* Logo */}
@@ -129,7 +141,10 @@ export const AdminLayout = () => {
             return (
               <button
                 key={item.path}
-                onClick={() => navigate(item.path)}
+                onClick={() => {
+                  closeMobileSidebar()
+                  navigate(item.path)
+                }}
                 style={{
                   display: 'flex', alignItems: 'center',
                   gap: sidebarOpen ? '10px' : '0',
@@ -217,10 +232,52 @@ export const AdminLayout = () => {
 
       {/* ─── PAGE CONTENT ─── */}
       <div style={{
-        marginLeft: sidebarOpen ? '240px' : '68px',
+        marginLeft: isMobile ? 0 : sidebarOpen ? '240px' : '68px',
         flex: 1, transition: 'margin-left 0.25s ease',
-        padding: '3rem', minWidth: 0
+        padding: isMobile ? '1rem' : '3rem', minWidth: 0
       }}>
+        {isMobile && (
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            style={{
+              width: '44px',
+              height: '44px',
+              background: '#0f0f1a',
+              color: '#fff',
+              border: 'none',
+              padding: 0,
+              borderRadius: '12px',
+              cursor: 'pointer',
+              marginBottom: '1rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexDirection: 'column',
+              gap: '4px',
+              boxShadow: '0 10px 24px rgba(15,15,26,0.16)'
+            }}>
+            {[0, 1, 2].map(line => (
+              <span
+                key={line}
+                style={{
+                  width: '18px',
+                  height: '2px',
+                  borderRadius: '999px',
+                  background: '#fff',
+                  transition: 'transform 0.2s ease, opacity 0.2s ease',
+                  transform: sidebarOpen
+                    ? line === 0
+                      ? 'translateY(6px) rotate(45deg)'
+                      : line === 1
+                        ? 'scaleX(0)'
+                        : 'translateY(-6px) rotate(-45deg)'
+                    : 'none',
+                  opacity: sidebarOpen && line === 1 ? 0 : 1
+                }}
+              />
+            ))}
+          </button>
+        )}
         <Outlet />
       </div>
     </div>
@@ -233,6 +290,7 @@ const AdminDashboard = () => {
   const [stats, setStats] = useState(null)
   const [reports, setReports] = useState(null)
   const [loading, setLoading] = useState(true)
+  const { isMobile, isTablet } = useResponsive()
 
   useEffect(() => {
     Promise.all([
@@ -395,13 +453,13 @@ const AdminDashboard = () => {
       {/* Stats Grid */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+        gridTemplateColumns: isMobile ? 'repeat(2, minmax(0, 1fr))' : 'repeat(auto-fit, minmax(200px, 1fr))',
         gap: '1rem', marginBottom: '2rem'
       }}>
         {statCards.map((card, i) => (
           <div key={i} style={{
             background: '#fff', borderRadius: '14px',
-            padding: '1.4rem', border: `1px solid ${card.alert ? 'rgba(239,68,68,0.2)' : '#e5e7eb'}`,
+            padding: '0.5rem', border: `1px solid ${card.alert ? 'rgba(239,68,68,0.2)' : '#e5e7eb'}`,
             transition: 'all 0.2s', cursor: 'default'
           }}
             onMouseEnter={e => {
@@ -431,7 +489,7 @@ const AdminDashboard = () => {
               )}
             </div>
             <div style={{
-              fontFamily: 'Syne, sans-serif', fontSize: '1.7rem',
+              fontFamily: 'Syne, sans-serif', fontSize: '1.5rem',
               fontWeight: 800, color: '#1a1a2e', lineHeight: 1,
               marginBottom: '4px'
             }}>{card.value}</div>
@@ -451,7 +509,7 @@ const AdminDashboard = () => {
       {/* Quick Actions + Charts row */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: '1.4fr 1fr',
+        gridTemplateColumns: isTablet ? '1fr' : '1.4fr 1fr',
         gap: '1.5rem', marginBottom: '1.5rem'
       }}>
 

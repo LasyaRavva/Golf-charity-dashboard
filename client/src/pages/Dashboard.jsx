@@ -6,6 +6,7 @@ import ScoreEntry from '../components/dashboard/ScoreEntry'
 import CharityCard from '../components/charity/CharityCard'
 import WinningsCard from '../components/dashboard/WinningsCard'
 import DrawsCard from '../components/dashboard/DrawsCard'
+import { useResponsive } from '../hooks/useResponsive'
 
 const Dashboard = () => {
   const navigate = useNavigate()
@@ -14,13 +15,23 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('overview')
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  const { isMobile, isTablet } = useResponsive()
 
   const handleLogout = () => {
+    if (isMobile) setSidebarOpen(false)
     logout()
     navigate('/login')
   }
 
   useEffect(() => { fetchDashboard() }, [])
+
+  useEffect(() => {
+    setSidebarOpen(!isMobile)
+  }, [isMobile])
+
+  const closeMobileSidebar = () => {
+    if (isMobile) setSidebarOpen(false)
+  }
 
   const fetchDashboard = async () => {
     try {
@@ -69,12 +80,13 @@ const Dashboard = () => {
 
       {/* ─── SIDEBAR ─── */}
       <div style={{
-        width: sidebarOpen ? '260px' : '72px',
+        width: isMobile ? (sidebarOpen ? '100%' : '0') : sidebarOpen ? '260px' : '72px',
         background: '#0f0f1a',
         display: 'flex', flexDirection: 'column',
         transition: 'width 0.25s ease',
         position: 'fixed', left: 0, top: 0, bottom: 0,
-        zIndex: 50, height: '100dvh', overflow: 'hidden'
+        zIndex: 50, height: '100dvh', overflow: 'hidden',
+        boxShadow: isMobile && sidebarOpen ? '0 0 0 999px rgba(15,15,26,0.45)' : 'none'
       }}>
 
         {/* Logo */}
@@ -177,7 +189,10 @@ const Dashboard = () => {
           {navItems.map(item => (
             <button
               key={item.id}
-              onClick={() => setActiveTab(item.id)}
+              onClick={() => {
+                setActiveTab(item.id)
+                closeMobileSidebar()
+              }}
               style={{
                 display: 'flex', alignItems: 'center',
                 gap: sidebarOpen ? '10px' : '0',
@@ -266,7 +281,10 @@ const Dashboard = () => {
         }}>
           {data?.subscription?.status !== 'active' && (
             <button
-              onClick={() => navigate('/subscribe')}
+              onClick={() => {
+                closeMobileSidebar()
+                navigate('/subscribe')
+              }}
               style={{
                 width: '100%', background: '#6c63ff',
                 color: '#fff', border: 'none',
@@ -299,17 +317,60 @@ const Dashboard = () => {
 
       {/* ─── MAIN CONTENT ─── */}
       <div style={{
-        marginLeft: sidebarOpen ? '260px' : '72px',
+        marginLeft: isMobile ? 0 : sidebarOpen ? '260px' : '72px',
         flex: 1, transition: 'margin-left 0.25s ease',
-        padding: '2rem 2rem 5rem', minWidth: 0
+        padding: isMobile ? '1rem 1rem 5rem' : '2rem 2rem 5rem', minWidth: 0
       }}>
 
         {/* Top bar */}
         <div style={{
           display: 'flex', justifyContent: 'space-between',
-          alignItems: 'center', marginBottom: '2rem'
+          alignItems: isMobile ? 'flex-start' : 'center', marginBottom: '2rem',
+          flexDirection: isMobile ? 'column' : 'row', gap: '1rem'
         }}>
           <div>
+            {isMobile && (
+              <button
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                style={{
+                  width: '44px',
+                  height: '44px',
+                  background: '#0f0f1a',
+                  color: '#fff',
+                  border: 'none',
+                  padding: 0,
+                  borderRadius: '12px',
+                  cursor: 'pointer',
+                  marginBottom: '1rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexDirection: 'column',
+                  gap: '4px',
+                  boxShadow: '0 10px 24px rgba(15,15,26,0.16)'
+                }}>
+                {[0, 1, 2].map(line => (
+                  <span
+                    key={line}
+                    style={{
+                      width: '18px',
+                      height: '2px',
+                      borderRadius: '999px',
+                      background: '#fff',
+                      transition: 'transform 0.2s ease, opacity 0.2s ease',
+                      transform: sidebarOpen
+                        ? line === 0
+                          ? 'translateY(6px) rotate(45deg)'
+                          : line === 1
+                            ? 'scaleX(0)'
+                            : 'translateY(-6px) rotate(-45deg)'
+                        : 'none',
+                      opacity: sidebarOpen && line === 1 ? 0 : 1
+                    }}
+                  />
+                ))}
+              </button>
+            )}
             <h1 style={{
               fontFamily: 'Syne, sans-serif', fontWeight: 800,
               fontSize: '1.6rem', color: '#1a1a2e',
@@ -351,7 +412,7 @@ const Dashboard = () => {
             {/* Stats row */}
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+              gridTemplateColumns: isMobile ? 'repeat(2, minmax(0, 1fr))' : 'repeat(auto-fit, minmax(200px, 1fr))',
               gap: '1rem', marginBottom: '2rem'
             }}>
               {[
@@ -386,7 +447,7 @@ const Dashboard = () => {
               ].map((stat, i) => (
                 <div key={i} style={{
                   background: '#fff', borderRadius: '14px',
-                  padding: '1.5rem', border: '1px solid #e5e7eb',
+                  padding: '1rem', border: '1px solid #e5e7eb',
                   display: 'flex', alignItems: 'center', gap: '1rem'
                 }}>
                   <div style={{
@@ -412,7 +473,7 @@ const Dashboard = () => {
             {/* Overview grid */}
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+              gridTemplateColumns: isTablet ? '1fr' : 'repeat(auto-fit, minmax(300px, 1fr))',
               gap: '1.5rem'
             }}>
               <SubscriptionCard

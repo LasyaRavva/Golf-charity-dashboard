@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import api from '../../services/api'
+import { useResponsive } from '../../hooks/useResponsive'
 
 const AdminReports = () => {
   const [reports, setReports] = useState(null)
@@ -7,6 +8,7 @@ const AdminReports = () => {
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('overview')
   const [dateRange, setDateRange] = useState('all')
+  const { isMobile, isTablet } = useResponsive()
 
   useEffect(() => {
     Promise.all([
@@ -55,7 +57,7 @@ const AdminReports = () => {
   )
 
   // ─── STAT CARD ───
-  const StatCard = ({ label, value, icon, color, bg, sub }) => (
+  const StatCard = ({ label, value, icon, color, bg, sub, valueFontSize = '1.8rem' }) => (
     <div style={{
       background: '#fff', borderRadius: '14px',
       padding: '1.4rem', border: '1px solid #e5e7eb',
@@ -80,7 +82,7 @@ const AdminReports = () => {
         }}>{icon}</div>
       </div>
       <div style={{
-        fontFamily: 'Syne, sans-serif', fontSize: '1.8rem',
+        fontFamily: 'Syne, sans-serif', fontSize: valueFontSize,
         fontWeight: 800, color: '#1a1a2e', lineHeight: 1,
         marginBottom: '4px'
       }}>{value}</div>
@@ -153,7 +155,10 @@ const AdminReports = () => {
         borderBottom: '1px solid #e5e7eb',
         marginBottom: '1.5rem',
         background: '#fff', borderRadius: '12px 12px 0 0',
-        padding: '0 1rem', overflow: 'auto'
+        padding: '0 1rem',
+        overflow: 'auto',
+        scrollbarWidth: 'none',
+        msOverflowStyle: 'none'
       }}>
         {tabs.map(tab => (
           <button
@@ -180,8 +185,10 @@ const AdminReports = () => {
           {/* Top stats */}
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-            gap: '1rem', marginBottom: '1.5rem'
+            gridTemplateColumns: isMobile
+              ? 'repeat(2, minmax(0, 1fr))'
+              : 'repeat(auto-fit, minmax(180px, 1fr))',
+            gap: '1rem', marginBottom: '1rem'
           }}>
             <StatCard
               label="Total Users"
@@ -189,6 +196,7 @@ const AdminReports = () => {
               icon="👥" color="#6c63ff"
               bg="rgba(108,99,255,0.08)"
               sub="Platform members"
+              valueFontSize={isMobile ? '1.35rem' : '1.8rem'}
             />
             <StatCard
               label="Active Subscribers"
@@ -196,6 +204,7 @@ const AdminReports = () => {
               icon="✅" color="#22c55e"
               bg="rgba(34,197,94,0.08)"
               sub="Currently active"
+              valueFontSize={isMobile ? '1.35rem' : '1.8rem'}
             />
             <StatCard
               label="Total Prize Pool"
@@ -203,6 +212,7 @@ const AdminReports = () => {
               icon="🏆" color="#f59e0b"
               bg="rgba(245,158,11,0.08)"
               sub="All time"
+              valueFontSize={isMobile ? '1.35rem' : '1.8rem'}
             />
             <StatCard
               label="Charity Donations"
@@ -210,6 +220,7 @@ const AdminReports = () => {
               icon="💚" color="#22c55e"
               bg="rgba(34,197,94,0.08)"
               sub="Total donated"
+              valueFontSize={isMobile ? '1.35rem' : '1.8rem'}
             />
             <StatCard
               label="Draws Published"
@@ -217,6 +228,7 @@ const AdminReports = () => {
               icon="🎯" color="#6c63ff"
               bg="rgba(108,99,255,0.08)"
               sub="All time"
+              valueFontSize={isMobile ? '1.35rem' : '1.8rem'}
             />
             <StatCard
               label="Winners Paid"
@@ -224,12 +236,13 @@ const AdminReports = () => {
               icon="💸" color="#6c63ff"
               bg="rgba(108,99,255,0.08)"
               sub="Prize payouts"
+              valueFontSize={isMobile ? '1.35rem' : '1.8rem'}
             />
           </div>
 
           {/* Two col summary */}
           <div style={{
-            display: 'grid', gridTemplateColumns: '1fr 1fr',
+            display: 'grid', gridTemplateColumns: isTablet ? '1fr' : '1fr 1fr',
             gap: '1.5rem', marginBottom: '1.5rem'
           }}>
 
@@ -304,7 +317,7 @@ const AdminReports = () => {
               }}>Draw Performance</h3>
 
               <div style={{
-                display: 'grid', gridTemplateColumns: '1fr 1fr',
+                display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
                 gap: '0.8rem'
               }}>
                 {[
@@ -412,7 +425,9 @@ const AdminReports = () => {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+            gridTemplateColumns: isMobile
+              ? 'repeat(2, minmax(0, 1fr))'
+              : 'repeat(auto-fit, minmax(200px, 1fr))',
             gap: '1rem'
           }}>
             {[
@@ -508,7 +523,9 @@ const AdminReports = () => {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+            gridTemplateColumns: isMobile
+              ? 'repeat(2, minmax(0, 1fr))'
+              : 'repeat(auto-fit, minmax(180px, 1fr))',
             gap: '1rem'
           }}>
             {[
@@ -516,7 +533,13 @@ const AdminReports = () => {
               { label: 'Published', value: reports?.draws?.published || 0, icon: '✅', color: '#22c55e', bg: 'rgba(34,197,94,0.08)' },
               { label: 'Jackpot Rollovers', value: reports?.draws?.jackpotRollovers || 0, icon: '🔄', color: '#f59e0b', bg: 'rgba(245,158,11,0.08)' },
               { label: 'Total Paid Out', value: `£${reports?.winners?.totalPaid || '0.00'}`, icon: '💸', color: '#22c55e', bg: 'rgba(34,197,94,0.08)' }
-            ].map((s, i) => <StatCard key={i} {...s} />)}
+            ].map((s, i) => (
+              <StatCard
+                key={i}
+                {...s}
+                valueFontSize={isMobile ? '1.35rem' : '1.8rem'}
+              />
+            ))}
           </div>
 
           {/* Winners by tier */}
@@ -590,7 +613,9 @@ const AdminReports = () => {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+            gridTemplateColumns: isMobile
+              ? 'repeat(2, minmax(0, 1fr))'
+              : 'repeat(auto-fit, minmax(180px, 1fr))',
             gap: '1rem'
           }}>
             {[
@@ -598,7 +623,13 @@ const AdminReports = () => {
               { label: '4-Match Winners', value: reports?.winners?.byTier?.[4] || 0, icon: '🥈', color: '#22c55e', bg: 'rgba(34,197,94,0.08)' },
               { label: '3-Match Winners', value: reports?.winners?.byTier?.[3] || 0, icon: '🥉', color: '#f59e0b', bg: 'rgba(245,158,11,0.08)' },
               { label: 'Total Paid Out', value: `£${reports?.winners?.totalPaid || '0.00'}`, icon: '💸', color: '#22c55e', bg: 'rgba(34,197,94,0.08)' }
-            ].map((s, i) => <StatCard key={i} {...s} />)}
+            ].map((s, i) => (
+              <StatCard
+                key={i}
+                {...s}
+                valueFontSize={isMobile ? '1.35rem' : '1.8rem'}
+              />
+            ))}
           </div>
 
           <div style={{
@@ -611,7 +642,7 @@ const AdminReports = () => {
             }}>Prize Distribution Breakdown</h3>
 
             <div style={{
-              display: 'grid', gridTemplateColumns: '1fr 1fr 1fr',
+              display: 'grid', gridTemplateColumns: isTablet ? '1fr' : '1fr 1fr 1fr',
               gap: '1rem'
             }}>
               {[

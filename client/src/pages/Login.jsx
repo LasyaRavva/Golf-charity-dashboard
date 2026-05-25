@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import api from '../services/api'
 import { useAuth } from '../context/AuthContext'
+import { useResponsive } from '../hooks/useResponsive'
 
 const getErrorMessage = (error, fallback) =>
   error?.response?.data?.message
@@ -15,6 +16,7 @@ const Login = () => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [focused, setFocused] = useState('')
+  const { isMobile, isTablet } = useResponsive()
 
   const handleSubmit = async () => {
     if (!form.email || !form.password)
@@ -55,7 +57,7 @@ const Login = () => {
     <div style={{
       minHeight: '100vh',
       display: 'grid',
-      gridTemplateColumns: '1fr 1fr',
+      gridTemplateColumns: isTablet ? '1fr' : '1fr 1fr',
       fontFamily: "'DM Sans', sans-serif"
     }}>
       <div style={{
@@ -63,7 +65,7 @@ const Login = () => {
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'center',
-        padding: '4rem',
+        padding: isMobile ? '2rem 1.5rem' : '4rem',
         position: 'relative',
         overflow: 'hidden'
       }}>
@@ -71,8 +73,8 @@ const Login = () => {
           position: 'absolute',
           top: '20%',
           left: '10%',
-          width: '300px',
-          height: '300px',
+          width: isMobile ? '180px' : '300px',
+          height: isMobile ? '180px' : '300px',
           borderRadius: '50%',
           background: 'radial-gradient(circle, rgba(108,99,255,0.2) 0%, transparent 70%)',
           pointerEvents: 'none'
@@ -81,8 +83,8 @@ const Login = () => {
           position: 'absolute',
           bottom: '15%',
           right: '5%',
-          width: '200px',
-          height: '200px',
+          width: isMobile ? '140px' : '200px',
+          height: isMobile ? '140px' : '200px',
           borderRadius: '50%',
           background: 'radial-gradient(circle, rgba(34,197,94,0.15) 0%, transparent 70%)',
           pointerEvents: 'none'
@@ -100,7 +102,7 @@ const Login = () => {
 
         <h2 style={{
           fontFamily: 'Syne, sans-serif',
-          fontSize: '2.5rem',
+          fontSize: isMobile ? '2rem' : '2.5rem',
           fontWeight: 800,
           color: '#fff',
           lineHeight: 1.1,
@@ -161,7 +163,7 @@ const Login = () => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '4rem'
+        padding: isMobile ? '2rem 1.5rem 3rem' : '4rem'
       }}>
         <div style={{ width: '100%', maxWidth: '400px' }}>
           <h1 style={{

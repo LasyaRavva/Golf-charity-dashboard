@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import api from '../services/api'
+import { useResponsive } from '../hooks/useResponsive'
 
 const getErrorMessage = (error, fallback) =>
   error?.response?.data?.message
@@ -25,6 +26,7 @@ const Signup = () => {
   const [step, setStep] = useState(1)
   const [charities, setCharities] = useState([])
   const [loadingCharities, setLoadingCharities] = useState(true)
+  const { isMobile, isTablet } = useResponsive()
 
   useEffect(() => {
     api.get('/charities')
@@ -86,7 +88,7 @@ const Signup = () => {
     <div style={{
       minHeight: '100vh',
       display: 'grid',
-      gridTemplateColumns: '1fr 1fr',
+      gridTemplateColumns: isTablet ? '1fr' : '1fr 1fr',
       fontFamily: "'DM Sans', sans-serif"
     }}>
       <div style={{
@@ -94,7 +96,7 @@ const Signup = () => {
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'center',
-        padding: '4rem',
+        padding: isMobile ? '2rem 1.5rem' : '4rem',
         position: 'relative',
         overflow: 'hidden'
       }}>
@@ -102,8 +104,8 @@ const Signup = () => {
           position: 'absolute',
           top: '30%',
           right: '10%',
-          width: '250px',
-          height: '250px',
+          width: isMobile ? '160px' : '250px',
+          height: isMobile ? '160px' : '250px',
           borderRadius: '50%',
           background: 'radial-gradient(circle, rgba(34,197,94,0.2) 0%, transparent 70%)',
           pointerEvents: 'none'
@@ -121,7 +123,7 @@ const Signup = () => {
 
         <h2 style={{
           fontFamily: 'Syne, sans-serif',
-          fontSize: '2.5rem',
+          fontSize: isMobile ? '2rem' : '2.5rem',
           fontWeight: 800,
           color: '#fff',
           lineHeight: 1.1,
@@ -172,7 +174,7 @@ const Signup = () => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '4rem'
+        padding: isMobile ? '2rem 1.5rem 3rem' : '4rem'
       }}>
         <div style={{ width: '100%', maxWidth: '400px' }}>
           <div style={{ display: 'flex', gap: '6px', marginBottom: '2rem' }}>
@@ -290,7 +292,7 @@ const Signup = () => {
                   display: 'block',
                   marginBottom: '6px'
                 }}>Charity contribution</label>
-                <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center' }}>
+                <div style={{ display: 'flex', gap: '0.8rem', alignItems: 'center', flexWrap: 'wrap' }}>
                   <input
                     type="range"
                     min="10"
@@ -388,7 +390,7 @@ const Signup = () => {
                 </div>
               )}
 
-              <div style={{ display: 'flex', gap: '0.8rem', marginTop: '0.5rem' }}>
+              <div style={{ display: 'flex', gap: '0.8rem', marginTop: '0.5rem', flexDirection: isMobile ? 'column' : 'row' }}>
                 <button
                   onClick={() => { setStep(1); setError('') }}
                   style={{

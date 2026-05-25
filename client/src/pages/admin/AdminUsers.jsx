@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import api from '../../services/api'
+import { useResponsive } from '../../hooks/useResponsive'
 
 const AdminUsers = () => {
   const [users, setUsers] = useState([])
@@ -11,6 +12,7 @@ const AdminUsers = () => {
   const [search, setSearch] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
   const [activeTab, setActiveTab] = useState('details')
+  const { isMobile, isTablet } = useResponsive()
 
   useEffect(() => { fetchUsers() }, [])
 
@@ -114,6 +116,9 @@ const AdminUsers = () => {
     boxSizing: 'border-box'
   })
 
+  const showUserList = !isMobile || !selected
+  const showUserDetails = !isMobile ? true : !!selected
+
   return (
     <div>
 
@@ -141,14 +146,15 @@ const AdminUsers = () => {
         }}>{message.text}</div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '340px 1fr', gap: '1.5rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isTablet ? '1fr' : '340px 1fr', gap: '1.5rem' }}>
 
         {/* ─── USER LIST PANEL ─── */}
+        {showUserList && (
         <div style={{
           background: '#fff', borderRadius: '16px',
           border: '1px solid #e5e7eb', overflow: 'hidden',
           display: 'flex', flexDirection: 'column',
-          maxHeight: 'calc(100vh - 180px)'
+          maxHeight: isTablet ? 'none' : 'calc(100vh - 180px)'
         }}>
 
           {/* Search + Filter */}
@@ -305,20 +311,24 @@ const AdminUsers = () => {
               })
             )}
           </div>
-        </div>
+        </div>)}
 
         {/* ─── USER DETAIL PANEL ─── */}
-        {selected ? (
-          <div style={{
+        {showUserDetails && (selected ? (
+          <div
+            className="hide-scrollbar"
+            style={{
             background: '#fff', borderRadius: '16px',
             border: '1px solid #e5e7eb', overflow: 'hidden',
-            maxHeight: 'calc(100vh - 180px)', overflowY: 'auto'
-          }}>
+            maxHeight: isTablet ? 'none' : 'calc(100vh - 180px)', overflowY: 'auto'
+            }}>
 
             {/* User header */}
             <div style={{
+              position: 'relative',
               padding: '1.5rem', borderBottom: '1px solid #f3f4f6',
-              display: 'flex', alignItems: 'center', gap: '1rem',
+              display: 'flex', alignItems: isMobile ? 'flex-start' : 'center', gap: '1rem',
+              flexDirection: isMobile ? 'column' : 'row',
               background: 'linear-gradient(135deg, #f8f8fc, #fff)'
             }}>
               <div style={{
@@ -344,7 +354,32 @@ const AdminUsers = () => {
                   })}
                 </div>
               </div>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
+              {isMobile && (
+                <button
+                  onClick={() => setSelected(null)}
+                  aria-label="Close user details"
+                  style={{
+                    position: 'absolute',
+                    top: '1rem',
+                    right: '1rem',
+                    background: '#ef4444',
+                    color: '#fff',
+                    border: 'none',
+                    width: '34px',
+                    height: '34px',
+                    borderRadius: '8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '1rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    boxShadow: '0 8px 20px rgba(239,68,68,0.25)'
+                  }}>
+                  ×
+                </button>
+              )}
+              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', width: isMobile ? '100%' : 'auto' }}>
                 {[
                   { label: selected.role === 'admin' ? 'Admin' : 'Subscriber', color: '#6c63ff' },
                   {
@@ -363,11 +398,14 @@ const AdminUsers = () => {
             </div>
 
             {/* Tabs */}
-            <div style={{
+            <div
+              className="hide-scrollbar"
+              style={{
               display: 'flex', gap: '0',
               borderBottom: '1px solid #f3f4f6',
-              padding: '0 1.5rem'
-            }}>
+              padding: '0 1.5rem',
+              overflowX: 'auto'
+              }}>
               {['details', 'subscription', 'scores'].map(tab => (
                 <button
                   key={tab}
@@ -397,7 +435,7 @@ const AdminUsers = () => {
                   }}>Edit User Details</h3>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '1rem' }}>
                       <div>
                         <label style={{
                           fontSize: '0.78rem', fontWeight: 600,
@@ -492,7 +530,8 @@ const AdminUsers = () => {
                     <div>
                       {/* Current status */}
                       <div style={{
-                        display: 'grid', gridTemplateColumns: '1fr 1fr 1fr',
+                        display: 'grid',
+                        gridTemplateColumns: isMobile ? '1fr 1fr' : '1fr 1fr 1fr',
                         gap: '0.8rem', marginBottom: '1.5rem'
                       }}>
                         {[
@@ -642,6 +681,7 @@ const AdminUsers = () => {
             </div>
           </div>
         ) : (
+          !isMobile && (
           <div style={{
             background: '#fff', borderRadius: '16px',
             border: '1px solid #e5e7eb',
@@ -659,7 +699,8 @@ const AdminUsers = () => {
               </p>
             </div>
           </div>
-        )}
+          )
+        ))}
       </div>
     </div>
   )
@@ -670,6 +711,7 @@ const ScoreEditRow = ({ score, onSave, loading }) => {
   const [editing, setEditing] = useState(false)
   const [val, setVal] = useState(score.score)
   const [date, setDate] = useState(score.date)
+  const { isMobile } = useResponsive()
 
   const getColor = (s) => {
     if (s >= 35) return '#22c55e'
@@ -680,7 +722,10 @@ const ScoreEditRow = ({ score, onSave, loading }) => {
 
   return (
     <div style={{
-      display: 'flex', alignItems: 'center', gap: '1rem',
+      display: 'grid',
+      gridTemplateColumns: isMobile ? '1fr 1fr' : '70px minmax(0, 1fr) auto auto',
+      alignItems: isMobile ? 'stretch' : 'center',
+      gap: '1rem',
       padding: '0.9rem 1rem',
       background: editing ? 'rgba(108,99,255,0.04)' : '#f8f8fc',
       borderRadius: '10px',
@@ -695,6 +740,7 @@ const ScoreEditRow = ({ score, onSave, loading }) => {
           value={val}
           onChange={e => setVal(e.target.value)}
           style={{
+            gridColumn: isMobile ? '1 / 2' : 'auto',
             width: '70px', padding: '5px 8px',
             borderRadius: '6px', border: '1.5px solid #6c63ff',
             background: '#fff', fontSize: '0.9rem',
@@ -703,6 +749,7 @@ const ScoreEditRow = ({ score, onSave, loading }) => {
         />
       ) : (
         <div style={{
+          gridColumn: isMobile ? '1 / 2' : 'auto',
           background: `${getColor(score.score)}15`,
           border: `1px solid ${getColor(score.score)}30`,
           color: getColor(score.score),
@@ -714,7 +761,7 @@ const ScoreEditRow = ({ score, onSave, loading }) => {
       )}
 
       {/* Date */}
-      <div style={{ flex: 1 }}>
+      <div style={{ gridColumn: isMobile ? '2 / 3' : 'auto', width: '100%' }}>
         {editing ? (
           <input
             type="date"
@@ -738,6 +785,7 @@ const ScoreEditRow = ({ score, onSave, loading }) => {
       {/* Rating */}
       {!editing && (
         <div style={{
+          gridColumn: isMobile ? '1 / 2' : 'auto',
           fontSize: '0.72rem', fontWeight: 600,
           color: getColor(score.score),
           background: `${getColor(score.score)}12`,
@@ -751,7 +799,15 @@ const ScoreEditRow = ({ score, onSave, loading }) => {
       )}
 
       {/* Actions */}
-      <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
+      <div style={{
+        display: 'flex',
+        gap: '6px',
+        flexShrink: 0,
+        width: isMobile ? '100%' : 'auto',
+        flexWrap: 'wrap',
+        justifyContent: isMobile ? 'flex-end' : 'flex-start',
+        gridColumn: isMobile ? '2 / 3' : 'auto'
+      }}>
         {editing ? (
           <>
             <button

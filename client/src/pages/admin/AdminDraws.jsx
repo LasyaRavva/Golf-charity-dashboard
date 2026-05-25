@@ -5,6 +5,7 @@ import {
   simulateDraw,
   publishDraw
 } from '../../services/drawService'
+import { useResponsive } from '../../hooks/useResponsive'
 
 const AdminDraws = () => {
   const [draws, setDraws] = useState([])
@@ -19,6 +20,7 @@ const AdminDraws = () => {
   const [selectedDraw, setSelectedDraw] = useState(null)
   const [confirmPublish, setConfirmPublish] = useState(null)
   const [activeTab, setActiveTab] = useState('all')
+  const { isMobile, isTablet } = useResponsive()
 
   useEffect(() => { fetchDraws() }, [])
 
@@ -133,7 +135,7 @@ const AdminDraws = () => {
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '1.5rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isTablet ? '1fr' : '1fr 1.5fr', gap: '1.5rem' }}>
 
         {/* ─── LEFT COLUMN ─── */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -180,7 +182,7 @@ const AdminDraws = () => {
                   fontSize: '0.78rem', fontWeight: 600,
                   color: '#374151', display: 'block', marginBottom: '8px'
                 }}>Draw Logic</label>
-                <div style={{ display: 'flex', gap: '0.8rem' }}>
+                <div style={{ display: 'flex', gap: '0.8rem', flexDirection: isMobile ? 'column' : 'row' }}>
                   {[
                     { id: 'random', label: 'Random', icon: '🎲', desc: 'Standard lottery-style' },
                     { id: 'algorithmic', label: 'Weighted', icon: '📊', desc: 'Based on score frequency' }
@@ -390,10 +392,13 @@ const AdminDraws = () => {
         }}>
 
           {/* Tabs */}
-          <div style={{
+          <div
+            className="hide-scrollbar"
+            style={{
             display: 'flex', borderBottom: '1px solid #f3f4f6',
-            padding: '0 1.5rem'
-          }}>
+            padding: '0 1.5rem',
+            overflowX: 'auto'
+            }}>
             {['all', 'draft', 'published'].map(tab => (
               <button
                 key={tab}
@@ -420,7 +425,9 @@ const AdminDraws = () => {
           </div>
 
           {/* List */}
-          <div style={{ padding: '1rem', overflowY: 'auto', maxHeight: '70vh' }}>
+          <div
+            className="hide-scrollbar"
+            style={{ padding: '1rem', overflowY: 'auto', maxHeight: '70vh' }}>
             {fetching ? (
               [1, 2, 3].map(i => (
                 <div key={i} style={{
@@ -466,10 +473,11 @@ const AdminDraws = () => {
                   }}>
 
                     {/* Draw header */}
-                    <div style={{
-                      display: 'flex', justifyContent: 'space-between',
-                      alignItems: 'flex-start', marginBottom: '1rem'
-                    }}>
+                      <div style={{
+                        display: 'flex', justifyContent: 'space-between',
+                        alignItems: 'flex-start', marginBottom: '1rem',
+                        flexDirection: isMobile ? 'column' : 'row', gap: '0.75rem'
+                      }}>
                       <div>
                         <div style={{
                           fontFamily: 'Syne, sans-serif', fontWeight: 800,
@@ -533,7 +541,7 @@ const AdminDraws = () => {
                     {/* Prize pool if published */}
                     {draw.prize_pools?.[0] && (
                       <div style={{
-                        display: 'grid', gridTemplateColumns: '1fr 1fr 1fr',
+                        display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr 1fr',
                         gap: '0.5rem', marginBottom: '1rem'
                       }}>
                         {[
@@ -560,7 +568,7 @@ const AdminDraws = () => {
 
                     {/* Actions */}
                     {draw.status === 'draft' && (
-                      <div style={{ display: 'flex', gap: '0.6rem' }}>
+                      <div style={{ display: 'flex', gap: '0.6rem', flexDirection: isMobile ? 'column' : 'row' }}>
                         <button
                           onClick={() => handleSimulate(draw.id)}
                           disabled={isSimulating}
@@ -666,7 +674,7 @@ const AdminDraws = () => {
               </p>
             </div>
 
-            <div style={{ display: 'flex', gap: '0.8rem' }}>
+            <div style={{ display: 'flex', gap: '0.8rem', flexDirection: isMobile ? 'column' : 'row' }}>
               <button
                 onClick={() => setConfirmPublish(null)}
                 style={{
